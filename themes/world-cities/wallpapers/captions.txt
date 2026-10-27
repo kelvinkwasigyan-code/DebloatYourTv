@@ -1,7 +1,11 @@
-﻿001.jpg	Manhattan Skyline, New York
+001.jpg	Manhattan Skyline, New York
 002.jpg	Downtown Dubai & Burj Khalifa
 003.jpg	Marina Bay Sands, Singapore
 004.jpg	City Hall & Vasabron, Stockholm
 005.jpg	Sydney Harbour & Opera House
 006.jpg	Tower Bridge, London
 007.jpg	Eiffel Tower, Paris
+008_night_tokyo.jpg	Tokyo Shinjuku & Tower at Night
+009_night_hongkong.jpg	Victoria Harbour at Night, Hong Kong
+010_night_manhattan.jpg	Manhattan & Brooklyn Bridge at Night, New York
+011_night_dubai.jpg	Burj Khalifa & Downtown Dubai at Night
