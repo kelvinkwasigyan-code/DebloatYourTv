@@ -6,6 +6,7 @@
   "wallpaper_captions": false,
   "wallpaper_dim": 20,
   "dock_opacity": 85,
+  "dock_glass": false,
   "ambient_glow": false,
   "app_glow": true,
   "wallpaper_moods": {
