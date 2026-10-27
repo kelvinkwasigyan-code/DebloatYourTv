@@ -18,10 +18,18 @@ import android.content.pm.ChangedPackages;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
+import android.graphics.Outline;
 import android.graphics.Paint;
+import android.view.ViewOutlineProvider;
+import org.json.JSONObject;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.file.Files;
 import android.graphics.RadialGradient;
 import android.graphics.Rect;
 import android.graphics.Shader;
@@ -180,6 +188,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
     private boolean showInputsPill = true;
     private TextView btnWifi;
+    private View btnProfile;
+    private ImageView profileAvatar;
+    private TextView profileInitial;
+
     /** The network pill's icon as last set, so a refresh that changes nothing does not lay the top bar out again. */
     private int wifiIcon;
     /** The pills have been filled in once; later resumes refresh them after the first frame. */
@@ -297,6 +309,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean libraryOkOpens;
     private boolean libraryFocusPending;
     private RecyclerView.OnScrollListener pendingFocusScroll;
+
+    private View nowPlayingPill;
+    private View nowPlayingInfo;
+    private EqualizerView nowPlayingEqualizer;
+    private TextView nowPlayingTitle;
+    private TextView nowPlayingArtist;
+    private ImageView btnNowPrev;
+    private ImageView btnNowPlayPause;
+    private ImageView btnNowNext;
+    private NowPlayingManager.Callback nowPlayingCallback;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     /** Refreshes the network pill when the connection changes: at boot Wi-Fi often connects after Home is shown. */
@@ -775,6 +797,21 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             return true;
         });
 
+        btnProfile = findViewById(R.id.btnProfile);
+        profileAvatar = findViewById(R.id.profileAvatar);
+        profileInitial = findViewById(R.id.profileInitial);
+        if (btnProfile != null) {
+            btnProfile.setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    outline.setOval(0, 0, view.getWidth(), view.getHeight());
+                }
+            });
+            btnProfile.setClipToOutline(true);
+            btnProfile.setOnClickListener(v -> openAccountSettings());
+            loadProfileImage();
+        }
+
         // Keep focus on the top bar at its ends and at the top: Android's focus finder would otherwise
         // jump to a tile far below when there is nothing in that direction.
         boolean rtlMenuBar = getResources().getBoolean(R.bool.rtl_menu_bar);
@@ -782,13 +819,19 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
             if (keyCode == KeyEvent.KEYCODE_DPAD_UP) return true;
             if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                if (nowPlayingPill != null && nowPlayingPill.getVisibility() == View.VISIBLE) {
+                    btnNowPlayPause.requestFocus();
+                    return true;
+                }
                 // Back to the dock tile Up came from, not wherever the focus finder lands.
                 focusTile(singleRow ? lastFocused : lastFocused % COLUMNS);
                 return true;
             }
             int firstButton = btnInputs.getVisibility() == View.VISIBLE ? R.id.btnInputs : firstTopButton().getId();
-            int leftButton = rtlMenuBar ? R.id.btnSettings : firstButton;
-            int rightButton = rtlMenuBar ? firstButton : R.id.btnSettings;
+            boolean hasProfile = btnProfile != null && btnProfile.getVisibility() == View.VISIBLE;
+            int rightmost = hasProfile ? R.id.btnProfile : R.id.btnSettings;
+            int leftButton = rtlMenuBar ? rightmost : firstButton;
+            int rightButton = rtlMenuBar ? firstButton : rightmost;
             if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) return v.getId() == leftButton;
             return keyCode == KeyEvent.KEYCODE_DPAD_RIGHT && v.getId() == rightButton;
         };
@@ -798,9 +841,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnSettings.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);
         btnLibraryTop.setOnKeyListener(pillKeys);
+        if (btnProfile != null) btnProfile.setOnKeyListener(pillKeys);
         for (View button : topAppButtons) button.setOnKeyListener(pillKeys);
         if (advancedEffects) {
             List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder, btnLibraryTop, btnSettings));
+            if (btnProfile != null) pills.add(btnProfile);
             pills.addAll(topAppButtons);
             for (View button : pills) {
                 button.setOnFocusChangeListener((view, focused) -> view.animate()
@@ -809,6 +854,78 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             }
         }
         if (festive) applyFestiveSkin((TextView) btnInputs, (TextView) btnSettings);
+
+        nowPlayingPill = findViewById(R.id.nowPlayingPill);
+        nowPlayingInfo = findViewById(R.id.nowPlayingInfo);
+        nowPlayingEqualizer = findViewById(R.id.nowPlayingEqualizer);
+        nowPlayingTitle = findViewById(R.id.nowPlayingTitle);
+        nowPlayingArtist = findViewById(R.id.nowPlayingArtist);
+        btnNowPrev = findViewById(R.id.btnNowPrev);
+        btnNowPlayPause = findViewById(R.id.btnNowPlayPause);
+        btnNowNext = findViewById(R.id.btnNowNext);
+
+        if (nowPlayingPill != null) {
+            NowPlayingManager.get().init(this);
+            nowPlayingInfo.setOnClickListener(v -> NowPlayingManager.get().openMusicApp(this));
+            btnNowPrev.setOnClickListener(v -> NowPlayingManager.get().skipToPrevious());
+            btnNowPlayPause.setOnClickListener(v -> NowPlayingManager.get().togglePlayPause());
+            btnNowNext.setOnClickListener(v -> NowPlayingManager.get().skipToNext());
+
+            View.OnKeyListener nowPlayingKey = (v, keyCode, event) -> {
+                if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
+                if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+                    firstTopButton().requestFocus();
+                    return true;
+                }
+                if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                    focusTile(singleRow ? lastFocused : lastFocused % COLUMNS);
+                    return true;
+                }
+                if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+                    if (v == nowPlayingInfo) return true;
+                    if (v == btnNowPrev) { nowPlayingInfo.requestFocus(); return true; }
+                    if (v == btnNowPlayPause) { btnNowPrev.requestFocus(); return true; }
+                    if (v == btnNowNext) { btnNowPlayPause.requestFocus(); return true; }
+                }
+                if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                    if (v == nowPlayingInfo) { btnNowPrev.requestFocus(); return true; }
+                    if (v == btnNowPrev) { btnNowPlayPause.requestFocus(); return true; }
+                    if (v == btnNowPlayPause) { btnNowNext.requestFocus(); return true; }
+                    if (v == btnNowNext) return true;
+                }
+                return false;
+            };
+
+            nowPlayingInfo.setOnKeyListener(nowPlayingKey);
+            btnNowPrev.setOnKeyListener(nowPlayingKey);
+            btnNowPlayPause.setOnKeyListener(nowPlayingKey);
+            btnNowNext.setOnKeyListener(nowPlayingKey);
+
+            if (advancedEffects) {
+                for (View pv : new View[]{nowPlayingInfo, btnNowPrev, btnNowPlayPause, btnNowNext}) {
+                    if (pv != null) {
+                        pv.setOnFocusChangeListener((view, focused) -> view.animate()
+                                .scaleX(focused ? 1.08f : 1f).scaleY(focused ? 1.08f : 1f)
+                                .setDuration(reducedMotion ? Motion.REDUCED_MS : 160).start());
+                    }
+                }
+            }
+
+            nowPlayingCallback = state -> {
+                if (state != null && state.hasActiveSession && (!state.title.isEmpty() || state.isPlaying)) {
+                    nowPlayingPill.setVisibility(View.VISIBLE);
+                    nowPlayingTitle.setText(state.title);
+                    nowPlayingArtist.setText(state.artist);
+                    nowPlayingEqualizer.setPlaying(state.isPlaying);
+                    btnNowPlayPause.setImageResource(state.isPlaying ? R.drawable.ic_pause : R.drawable.ic_play);
+                    btnNowPlayPause.setContentDescription(getString(state.isPlaying ? R.string.pause : R.string.play));
+                } else {
+                    nowPlayingPill.setVisibility(View.GONE);
+                    nowPlayingEqualizer.setPlaying(false);
+                }
+            };
+            NowPlayingManager.get().registerCallback(nowPlayingCallback);
+        }
 
         // Hide the glass when focus leaves the tiles.
         getWindow().getDecorView().getViewTreeObserver().addOnGlobalFocusChangeListener((oldF, newF) -> {
@@ -953,6 +1070,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             return;
         }
         restartIdleClock();
+        loadProfileImage();
         promptsPaused = false;
         if (grid.getAdapter() == null) grid.setAdapter(adapter);   // dropped by onTrimMemory
         switch (tileRefresh.onResume(packagesChangedSinceRebuild())) {
@@ -994,6 +1112,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 handler.postDelayed(this::playPetalShower, 450);
             }
         }
+        NowPlayingManager.get().refreshSessions();
     }
 
     /** Launcher settings' change count (Config.SETTINGS_REVISION_KEY); onResume rebuilds Home when it moved. */
@@ -1161,6 +1280,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         handler.removeCallbacks(minuteTick);
         stopStats();
         if (diya != null) diya.stop();
+        if (nowPlayingEqualizer != null) nowPlayingEqualizer.setPlaying(false);
         cancelPendingFocusScroll();
         // Nothing of ours stays on screen over another app; an undecided prompt simply returns next time.
         if (cardPrompt != null) cardPrompt.dismiss();
@@ -1222,6 +1342,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             cm.unregisterNetworkCallback(networkCallback);
             cm.unregisterNetworkCallback(vpnCallback);
         }
+        if (nowPlayingCallback != null) NowPlayingManager.get().unregisterCallback(nowPlayingCallback);
     }
 
     /**
@@ -1258,6 +1379,25 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     public boolean dispatchKeyEvent(KeyEvent event) {
         // Vendor keys (TCL Netflix button, 4062) never reach the key services, only the focused window.
         if (event.getKeyCode() >= 1000 && RemoteKeys.handle(this, event, homeAppKeys.get(event.getKeyCode()), null)) return true;
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            switch (event.getKeyCode()) {
+                case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+                    NowPlayingManager.get().togglePlayPause();
+                    return true;
+                case KeyEvent.KEYCODE_MEDIA_PLAY:
+                    NowPlayingManager.get().play();
+                    return true;
+                case KeyEvent.KEYCODE_MEDIA_PAUSE:
+                    NowPlayingManager.get().pause();
+                    return true;
+                case KeyEvent.KEYCODE_MEDIA_NEXT:
+                    NowPlayingManager.get().skipToNext();
+                    return true;
+                case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+                    NowPlayingManager.get().skipToPrevious();
+                    return true;
+            }
+        }
         if (handleSettingsKey(event)) return true;
         if (tileMenuEnabled && !reordering && openPopup == null && cardPrompt == null
                 && event.getKeyCode() == KeyEvent.KEYCODE_MENU) {
@@ -2266,7 +2406,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     rtlAppGrid, keyCode == KeyEvent.KEYCODE_DPAD_LEFT);
         }
         if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-            if (position < COLUMNS) return false;          // dock row: let focus move to the top bar
+            if (position < COLUMNS) {
+                if (nowPlayingPill != null && nowPlayingPill.getVisibility() == View.VISIBLE) {
+                    btnNowPlayPause.requestFocus();
+                    return true;
+                }
+                return false;          // dock row: let focus move to the top bar
+            }
             target = position - COLUMNS;
         } else {
             int lastRowStart = ((count - 1) / COLUMNS) * COLUMNS;
@@ -2831,6 +2977,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         btnVpn.setVisibility(View.VISIBLE);
     }
+
 
 
     /** Every settings entry shares the standard intent and the vendor fallback (SystemSettings). */
@@ -3549,5 +3696,92 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             default:
                 return getString(R.string.card_state_new);
         }
+    }
+
+    private void openAccountSettings() {
+        Intent intent = new Intent();
+        intent.setComponent(new ComponentName(
+                "com.android.tv.settings",
+                "com.google.android.tv.settings.AccountActivity"));
+        try {
+            startActivity(intent);
+        } catch (Exception e) {
+            try {
+                startActivity(new Intent(Settings.ACTION_SYNC_SETTINGS));
+            } catch (Exception e2) {
+                open(systemIntent(Settings.ACTION_SETTINGS));
+            }
+        }
+    }
+
+    private void loadProfileImage() {
+        if (profileAvatar == null || profileInitial == null) return;
+        new Thread(() -> {
+            Bitmap bmp = null;
+            File extDir = getExternalFilesDir(null);
+            if (extDir != null) {
+                File[] candidates = new File[] {
+                    new File(extDir, "avatar.png"),
+                    new File(extDir, "avatar.jpg"),
+                    new File(extDir, "avatar.jpeg"),
+                    new File(extDir, "avatar.webp"),
+                    new File(extDir, "profile.png"),
+                    new File(extDir, "profile.jpg")
+                };
+                for (File f : candidates) {
+                    if (f.exists() && f.length() > 0) {
+                        try {
+                            bmp = BitmapFactory.decodeFile(f.getAbsolutePath());
+                            if (bmp != null) break;
+                        } catch (Exception ignored) {}
+                    }
+                }
+
+                if (bmp == null) {
+                    File cfgFile = new File(extDir, Config.FILE_NAME);
+                    if (cfgFile.exists()) {
+                        try {
+                            String content = new String(Files.readAllBytes(cfgFile.toPath()));
+                            JSONObject json = new JSONObject(content);
+                            String urlStr = json.optString("avatar_url", "").trim();
+                            if (urlStr.isEmpty()) urlStr = json.optString("profile_image_url", "").trim();
+                            if (!urlStr.isEmpty()) {
+                                URL url = new URL(urlStr);
+                                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                                conn.setConnectTimeout(6000);
+                                conn.setReadTimeout(6000);
+                                conn.connect();
+                                if (conn.getResponseCode() == 200) {
+                                    try (InputStream in = conn.getInputStream()) {
+                                        bmp = BitmapFactory.decodeStream(in);
+                                        if (bmp != null) {
+                                            File cached = new File(extDir, "avatar.png");
+                                            try (java.io.FileOutputStream out = new java.io.FileOutputStream(cached)) {
+                                                bmp.compress(Bitmap.CompressFormat.PNG, 95, out);
+                                            } catch (Exception ignored) {}
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+
+            final Bitmap finalBmp = bmp;
+            runOnUiThread(() -> {
+                if (finalBmp != null) {
+                    profileAvatar.setImageBitmap(finalBmp);
+                    profileAvatar.setVisibility(View.VISIBLE);
+                    profileInitial.setVisibility(View.GONE);
+                } else if (profileAvatar.getDrawable() != null) {
+                    profileAvatar.setVisibility(View.VISIBLE);
+                    profileInitial.setVisibility(View.GONE);
+                } else {
+                    profileAvatar.setVisibility(View.GONE);
+                    profileInitial.setVisibility(View.VISIBLE);
+                }
+            });
+        }).start();
     }
 }

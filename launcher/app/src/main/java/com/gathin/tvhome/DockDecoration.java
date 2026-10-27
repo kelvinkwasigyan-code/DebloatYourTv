@@ -24,6 +24,7 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
     private final float namesRoom;
     /** Light glass like the top bar's pills (config.xml dock_glass): a white tint that fades downwards. */
     private final boolean lightGlass;
+    private final int opacity;
     /** Padding all round the tiles equal to the gap between them (config.xml dock_even_padding). */
     private final boolean evenPadding;
     /** The band's top and bottom the glass gradient was made for; it is remade when they move. */
@@ -53,12 +54,13 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
         this.density = density;
         this.namesRoom = names ? 22 * density : 0;
         this.lightGlass = lightGlass;
+        this.opacity = opacity;
         this.evenPadding = evenPadding;
         this.bandVisible = bandVisible;
         band.setColor(translucent ? 0x8C121014 : (Math.round(opacity * 2.55f) << 24) | 0x141416);
         edge.setStyle(Paint.Style.STROKE);
         edge.setStrokeWidth(density);
-        edge.setColor(lightGlass ? 0x38FFFFFF : translucent ? 0x26FFFFFF : 0x1FFFFFFF);
+        edge.setColor(lightGlass ? 0x80FFFFFF : translucent ? 0x26FFFFFF : 0x1FFFFFFF);
     }
 
     /** Concentric corners: the band's radius is the tiles' radius plus the band's padding around them. */
@@ -140,8 +142,12 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
         }
         rect.bottom += namesRoom;
         if (lightGlass && (rect.top != shaderTop || rect.bottom != shaderBottom)) {
-            // The pills' glass (pill_bg: white, 18% fading to 8%), a little fainter over this much larger area.
-            band.setShader(new LinearGradient(0, rect.top, 0, rect.bottom, 0x24FFFFFF, 0x0DFFFFFF,
+            // White blur frosted glass with reduced transparency (richer opacity based on dock_opacity)
+            int topAlpha = Math.min(255, Math.max(90, Math.round(255 * (0.45f + 0.40f * (opacity / 100f)))));
+            int bottomAlpha = Math.min(255, Math.max(60, Math.round(255 * (0.30f + 0.35f * (opacity / 100f)))));
+            int topColor = (topAlpha << 24) | 0x00FFFFFF;
+            int bottomColor = (bottomAlpha << 24) | 0x00FFFFFF;
+            band.setShader(new LinearGradient(0, rect.top, 0, rect.bottom, topColor, bottomColor,
                     Shader.TileMode.CLAMP));
             shaderTop = rect.top;
             shaderBottom = rect.bottom;

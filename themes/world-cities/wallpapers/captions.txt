@@ -1,0 +1,7 @@
+﻿001.jpg	Manhattan Skyline, New York
+002.jpg	Downtown Dubai & Burj Khalifa
+003.jpg	Marina Bay Sands, Singapore
+004.jpg	City Hall & Vasabron, Stockholm
+005.jpg	Sydney Harbour & Opera House
+006.jpg	Tower Bridge, London
+007.jpg	Eiffel Tower, Paris

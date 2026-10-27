@@ -1,0 +1,10 @@
+{
+  "wallpaper": true,
+  "wallpaper_rotation_minutes": 8,
+  "wallpaper_order": "shuffle",
+  "wallpaper_captions": false,
+  "wallpaper_dim": 20,
+  "dock_opacity": 85,
+  "ambient_glow": false,
+  "app_glow": true
+}

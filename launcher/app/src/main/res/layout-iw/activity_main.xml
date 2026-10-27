@@ -337,6 +337,38 @@
                 android:clipToPadding="false"
                 android:orientation="horizontal">
 
+                <FrameLayout
+                    android:id="@+id/btnProfile"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:layout_marginEnd="10dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="@drawable/profile_circle_bg"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:contentDescription="@string/google_account"
+                    android:nextFocusDown="@+id/grid">
+
+                    <ImageView
+                        android:id="@+id/profileAvatar"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/profile_avatar" />
+
+                    <TextView
+                        android:id="@+id/profileInitial"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:background="@drawable/profile_initial_bg"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="20sp"
+                        android:fontFamily="@string/font_medium"
+                        android:text="K"
+                        android:visibility="gone" />
+                </FrameLayout>
+
                 <TextView
                     android:id="@+id/btnSettings"
                     style="@style/TopButton"
@@ -383,6 +415,127 @@
                     android:text="@string/inputs"
                     android:drawableStart="@drawable/ic_input"
                     android:nextFocusDown="@+id/grid" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/nowPlayingPill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_below="@+id/topButtons"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/now_playing_bg"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/nowPlayingInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="@drawable/now_playing_info_bg"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="10dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp">
+
+                    <com.gathin.tvhome.EqualizerView
+                        android:id="@+id/nowPlayingEqualizer"
+                        android:layout_width="16dp"
+                        android:layout_height="14dp"
+                        android:layout_marginEnd="9dp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_vertical"
+                        android:duplicateParentState="true">
+
+                        <TextView
+                            android:id="@+id/nowPlayingTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxWidth="170dp"
+                            android:singleLine="true"
+                            android:ellipsize="marquee"
+                            android:marqueeRepeatLimit="marquee_forever"
+                            android:scrollHorizontally="true"
+                            android:textColor="@drawable/pill_text"
+                            android:duplicateParentState="true"
+                            android:textSize="13sp"
+                            android:fontFamily="@string/font_medium"
+                            android:letterSpacing="0.01" />
+
+                        <TextView
+                            android:id="@+id/nowPlayingArtist"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:maxWidth="170dp"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:textColor="@drawable/pill_text_dim"
+                            android:duplicateParentState="true"
+                            android:textSize="11sp"
+                            android:fontFamily="@string/font_regular" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="22dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="#2EFFFFFF" />
+
+                <ImageView
+                    android:id="@+id/btnNowPrev"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:padding="7dp"
+                    android:src="@drawable/ic_skip_previous"
+                    android:tint="@drawable/pill_text"
+                    android:background="@drawable/media_button_bg"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:contentDescription="@string/previous" />
+
+                <ImageView
+                    android:id="@+id/btnNowPlayPause"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginStart="6dp"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_play"
+                    android:tint="@drawable/pill_text"
+                    android:background="@drawable/media_button_bg"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:contentDescription="@string/play_pause" />
+
+                <ImageView
+                    android:id="@+id/btnNowNext"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="6dp"
+                    android:padding="7dp"
+                    android:src="@drawable/ic_skip_next"
+                    android:tint="@drawable/pill_text"
+                    android:background="@drawable/media_button_bg"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:contentDescription="@string/next" />
+
             </LinearLayout>
         </RelativeLayout>
 

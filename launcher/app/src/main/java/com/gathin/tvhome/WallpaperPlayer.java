@@ -224,8 +224,8 @@ final class WallpaperPlayer {
             // the system font is fine
         }
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.END);
-        params.topMargin = Math.round(110 * dp);
+                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.END);
+        params.bottomMargin = Math.round(48 * dp);
         params.setMarginEnd(Math.round(62 * dp));
         root.addView(text, params);
         return text;
