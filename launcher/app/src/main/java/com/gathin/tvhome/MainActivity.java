@@ -734,6 +734,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             open(systemIntent(Settings.ACTION_WIFI_SETTINGS));
             return true;
         });
+        View btnBluetooth = findViewById(R.id.btnBluetooth);
+        if (btnBluetooth != null) {
+            // The Bluetooth Connect add-on when it is installed, otherwise the TV's own Bluetooth settings.
+            btnBluetooth.setOnClickListener(v -> {
+                Intent addon = new Intent(Intent.ACTION_MAIN)
+                        .setClassName("com.gathin.btconnect", "com.gathin.btconnect.MainActivity");
+                if (addon.resolveActivity(getPackageManager()) != null) open(addon);
+                else open(systemIntent(Settings.ACTION_BLUETOOTH_SETTINGS));
+            });
+        }
         launcherSettingsButton = cfg.launcherSettingsButton;
         if (launcherSettingsButton) {
             ((TextView) btnSettings).setText(R.string.launcher_settings);
@@ -774,6 +784,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             showInputsPill = false;
             btnInputs.setVisibility(View.GONE);
             btnWifi.setVisibility(View.GONE);
+            if (btnBluetooth != null) btnBluetooth.setVisibility(View.GONE);
             ((TextView) btnSettings).setText(R.string.settings);
             ((TextView) btnSettings).setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_settings, 0, 0, 0);
             if (!iconOnlyButtons) makeIconOnly((TextView) btnSettings);
@@ -787,6 +798,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             topButtons.setGravity(Gravity.CENTER_VERTICAL);
         }
         if (iconOnlyButtons) {
+            if (btnBluetooth != null) makeIconOnly((TextView) btnBluetooth);
             if (cfg.wifiLabelWidth > 0) btnWifi.setMaxWidth(Math.round(cfg.wifiLabelWidth * density));
             else makeIconOnly(btnWifi);
             makeIconOnly((TextView) btnSettings);
@@ -837,6 +849,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         };
         btnInputs.setOnKeyListener(pillKeys);
         btnWifi.setOnKeyListener(pillKeys);
+        if (btnBluetooth != null) btnBluetooth.setOnKeyListener(pillKeys);
         btnVpn.setOnKeyListener(pillKeys);
         btnSettings.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);

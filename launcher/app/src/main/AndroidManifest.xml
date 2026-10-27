@@ -83,6 +83,8 @@
         <!-- Coocaa OS sources for the Inputs menu (coocaa_sources); see CoocaaSources. -->
         <provider android:authorities="com.skyworth.tv.provider" />
         <provider android:authorities="com.skyworth.tv.sdk.provider" />
+        <!-- The Bluetooth Connect add-on, opened by the Bluetooth pill. -->
+        <package android:name="com.gathin.btconnect" />
     </queries>
 
     <application
