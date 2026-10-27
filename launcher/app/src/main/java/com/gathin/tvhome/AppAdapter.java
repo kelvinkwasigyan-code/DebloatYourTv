@@ -335,6 +335,9 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             fresh.add(docked + i, new Entry(Entry.EMPTY, "", new ComponentName(ctx, "empty-dock-slot-" + i),
                     null, null, null, 0));
         }
+        if (showLibrary && docked + emptySlots > 0 && docked + emptySlots < fresh.size()) {
+            fresh = new ArrayList<>(fresh.subList(0, docked + emptySlots));
+        }
         items.clear();
         items.addAll(fresh);
         notifyDataSetChanged();
@@ -386,7 +389,14 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             View row = LayoutInflater.from(ctx).inflate(R.layout.row_app_library, parent, false);
             View button = row.findViewById(R.id.btnLibrary);
             button.setOnClickListener(v -> listener.onLibraryRequested());
-            button.setOnFocusChangeListener((v, focused) -> { if (focused) listener.onLibraryFocused(); });
+            button.setOnFocusChangeListener((v, focused) -> {
+                if (focused) {
+                    listener.onLibraryFocused();
+                    v.animate().scaleX(1.08f).scaleY(1.08f).setDuration(160).start();
+                } else {
+                    v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(140).start();
+                }
+            });
             button.setOnKeyListener((v, key, event) -> {
                 if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
                 if (key == KeyEvent.KEYCODE_DPAD_UP) listener.onLibraryUp();

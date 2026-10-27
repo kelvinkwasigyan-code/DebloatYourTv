@@ -20,6 +20,8 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -179,7 +181,21 @@ final class AppLibraryDialog {
     void close() {
         dismissActions();
         if (popup.isShowing()) {
-            popup.dismiss();
+            if (animations && !reducedMotion && panel.isAttachedToWindow()) {
+                panel.animate()
+                        .alpha(0f)
+                        .scaleX(0.85f)
+                        .scaleY(0.85f)
+                        .setInterpolator(new AccelerateInterpolator(1.5f))
+                        .setDuration(150)
+                        .withLayer()
+                        .withEndAction(() -> {
+                            try { popup.dismiss(); } catch (Exception ignored) {}
+                        })
+                        .start();
+            } else {
+                try { popup.dismiss(); } catch (Exception ignored) {}
+            }
         } else if (!closed) {
             closed = true;   // still loading: it never shows
             dismissed.run();
@@ -196,11 +212,26 @@ final class AppLibraryDialog {
         if (container.getLayoutParams() instanceof WindowManager.LayoutParams) {
             WindowManager.LayoutParams params = (WindowManager.LayoutParams) container.getLayoutParams();
             params.flags |= WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-            params.dimAmount = 0.55f;
+            params.dimAmount = 0.65f;
             activity.getWindowManager().updateViewLayout(container, params);
         }
-        panel.setAlpha(0f);
-        panel.animate().alpha(1f).setDuration(reducedMotion ? Motion.REDUCED_MS : 180).start();
+        if (animations && !reducedMotion) {
+            panel.setAlpha(0f);
+            panel.setScaleX(0.82f);
+            panel.setScaleY(0.82f);
+            panel.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setInterpolator(new OvershootInterpolator(1.15f))
+                    .setDuration(220)
+                    .withLayer()
+                    .start();
+        } else {
+            panel.setAlpha(1f);
+            panel.setScaleX(1f);
+            panel.setScaleY(1f);
+        }
     }
 
     /** Called by the activity's existing package receiver; an uninstall cannot leave a stale action. */
@@ -267,6 +298,7 @@ final class AppLibraryDialog {
     }
 
     private void fill(List<ResolveInfo> catalogue) {
+        catalogue.removeIf(app -> onHome.test(app.activityInfo.packageName));
         totalApps = catalogue.size();
         apps = catalogue;
         Map<String, Boolean> home = new HashMap<>();

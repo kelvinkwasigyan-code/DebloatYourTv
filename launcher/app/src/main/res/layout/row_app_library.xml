@@ -1,7 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="84dp">
-    <TextView android:id="@+id/btnLibrary" style="@style/TopButton"
-        android:layout_gravity="center" android:text="@string/app_library"
-        android:drawableStart="@drawable/ic_apps_pill" />
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="18dp"
+    android:paddingBottom="24dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <TextView
+        android:id="@+id/btnLibrary"
+        android:layout_width="wrap_content"
+        android:layout_height="46dp"
+        android:layout_gravity="center"
+        android:paddingStart="24dp"
+        android:paddingEnd="26dp"
+        android:gravity="center"
+        android:background="@drawable/all_apps_card_bg"
+        android:textColor="@color/all_apps_card_text"
+        android:textSize="15sp"
+        android:fontFamily="@string/font_medium"
+        android:letterSpacing="0.04"
+        android:text="@string/app_library"
+        android:drawableStart="@drawable/ic_apps_pill"
+        android:drawableTint="@color/all_apps_card_text"
+        android:drawablePadding="10dp"
+        android:focusable="true"
+        android:clickable="true" />
 </FrameLayout>
