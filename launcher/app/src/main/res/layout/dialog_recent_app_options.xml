@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/optionsPanel"
+    android:layout_width="340dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/glass_panel"
+    android:padding="22dp"
+    android:gravity="center_horizontal">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <ImageView
+            android:id="@+id/optionAppIcon"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:scaleType="fitCenter"
+            android:contentDescription="@null"
+            android:layout_marginEnd="12dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/optionAppTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFFFF"
+                android:textSize="15sp"
+                android:fontFamily="@string/font_medium"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/optionAppPkg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#70FFFFFF"
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Close App Button -->
+    <Button
+        android:id="@+id/btnCloseApp"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:text="@string/close_app"
+        android:textColor="@color/glass_button_text"
+        android:textSize="13.5sp"
+        android:fontFamily="@string/font_medium"
+        android:background="@drawable/glass_button_bg"
+        android:drawableStart="@drawable/ic_close"
+        android:drawablePadding="10dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:gravity="start|center_vertical"
+        android:layout_marginBottom="10dp"
+        android:focusable="true" />
+
+    <!-- App Info Button -->
+    <Button
+        android:id="@+id/btnAppInfo"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:text="@string/app_info"
+        android:textColor="@color/glass_button_text"
+        android:textSize="13.5sp"
+        android:fontFamily="@string/font_medium"
+        android:background="@drawable/glass_button_bg"
+        android:drawableStart="@drawable/ic_info"
+        android:drawablePadding="10dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:gravity="start|center_vertical"
+        android:layout_marginBottom="10dp"
+        android:focusable="true" />
+
+    <!-- Cancel Button -->
+    <Button
+        android:id="@+id/btnCancelOption"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:text="@android:string/cancel"
+        android:textColor="@color/glass_button_text"
+        android:textSize="13sp"
+        android:fontFamily="@string/font_regular"
+        android:background="@drawable/glass_button_bg"
+        android:gravity="center"
+        android:focusable="true" />
+</LinearLayout>

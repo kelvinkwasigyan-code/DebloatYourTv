@@ -2531,6 +2531,25 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         focusTile(Math.min(lastRow + lastFocused % COLUMNS, adapter.appCount() - 1));
     }
 
+    @Override public void onLibraryDown() {
+        showRecentApps();
+    }
+
+    private RecentAppsDrawer recentAppsDrawer;
+
+    private void showRecentApps() {
+        if (recentAppsDrawer != null) {
+            recentAppsDrawer.dismiss();
+            recentAppsDrawer = null;
+        }
+        if (openPopup != null) openPopup.dismiss();
+        recentAppsDrawer = new RecentAppsDrawer(this, () -> {
+            recentAppsDrawer = null;
+            focusLibrary();
+        });
+        recentAppsDrawer.show();
+    }
+
     private void focusLibrary() {
         cancelPendingFocusScroll();
         int position = adapter.appCount();
