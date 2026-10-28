@@ -1,0 +1,33 @@
+[
+  {
+    "title": "Dune: Part Two",
+    "recommendation": "TRENDING ON NOVA",
+    "asset": "movies/dune_part_two.jpg",
+    "url": "https://image.tmdb.org/t/p/w1280/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg"
+  },
+  {
+    "title": "Oppenheimer",
+    "recommendation": "ACADEMY AWARD WINNER",
+    "asset": "movies/oppenheimer.jpg",
+    "url": "https://image.tmdb.org/t/p/w1280/nb3xI8XI3w4pMVZ38VijbsyBqP4.jpg"
+  },
+  {
+    "title": "Interstellar",
+    "recommendation": "SCI-FI MASTERPIECE",
+    "asset": "movies/interstellar.jpg",
+    "url": "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1280&q=80"
+  },
+  {
+    "title": "Blade Runner 2049",
+    "recommendation": "CRITICALLY ACCLAIMED",
+    "asset": "movies/blade_runner.jpg",
+    "url": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1280&q=80"
+  },
+  {
+    "title": "Inception",
+    "recommendation": "MIND-BENDING THRILLER",
+    "asset": "movies/inception.jpg",
+    "url": "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1280&q=80"
+  }
+]
+

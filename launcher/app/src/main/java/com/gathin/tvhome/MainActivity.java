@@ -205,6 +205,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private List<RaceWeekend.Race> raceCalendar;
     private View racePanel;
     private TextView raceKicker, raceHeadline, raceSessions;
+    private NovaMovieSlideshowManager movieSlideshowManager;
     /** config.xml show_stats, overridable by a theme. Off: the line is gone and nothing is read. */
     private boolean showStats;
     private boolean shamsi;
@@ -466,6 +467,21 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         ambientGlow = cfg.ambientGlow;
         appGlow = cfg.appGlow;
         if (!ambientGlow) ambient.setVisibility(View.GONE);
+        FrameLayout movieSlideshowLayer = findViewById(R.id.movieSlideshowLayer);
+        ImageView movieBackdropA = findViewById(R.id.movieBackdropA);
+        ImageView movieBackdropB = findViewById(R.id.movieBackdropB);
+        View movieInfoContainer = findViewById(R.id.movieInfoContainer);
+        TextView movieRecommendationBadge = findViewById(R.id.movieRecommendationBadge);
+        TextView movieTitleText = findViewById(R.id.movieTitleText);
+        if (movieSlideshowLayer != null && movieBackdropA != null && movieBackdropB != null) {
+            movieSlideshowManager = new NovaMovieSlideshowManager(this,
+                    movieSlideshowLayer,
+                    movieBackdropA,
+                    movieBackdropB,
+                    movieInfoContainer,
+                    movieRecommendationBadge,
+                    movieTitleText);
+        }
         heroName = findViewById(R.id.heroName);
         hero = findViewById(R.id.hero);
         // The hero is now a group (name, and the cinematic lines): without this every fade of the default
@@ -944,7 +960,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // Hide the glass when focus leaves the tiles.
         getWindow().getDecorView().getViewTreeObserver().addOnGlobalFocusChangeListener((oldF, newF) -> {
             boolean onTile = newF != null && newF.getId() == R.id.card;
-            if (!onTile) hideGlass();
+            if (!onTile) {
+                hideGlass();
+                if (movieSlideshowManager != null) movieSlideshowManager.onNovaUnfocused();
+            }
         });
 
         packageFilter.addAction(Intent.ACTION_PACKAGE_ADDED);
@@ -1287,6 +1306,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         root.removeCallbacks(showIdleClock);
         endReorder();   // Home or another app while reordering keeps the order so far
         wallpaperPlayer.stop();
+        if (movieSlideshowManager != null) movieSlideshowManager.stop();
         stopAmbientAnimation();
         hero.animate().cancel();
         ambient.animate().cancel();
@@ -1856,6 +1876,17 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             revealRect.set(0, -(int) pad * 2, item.getWidth(), item.getHeight() + (int) pad);
             grid.requestChildRectangleOnScreen(item, revealRect, reducedMotion);
         }
+        if (movieSlideshowManager != null) {
+            String pkg = adapter.packageAt(position);
+            String label = adapter.labelAt(position);
+            boolean isNova = "org.courville.nova".equals(pkg)
+                    || (label != null && label.toLowerCase().contains("nova"));
+            if (isNova) {
+                movieSlideshowManager.onNovaFocused();
+            } else {
+                movieSlideshowManager.onNovaUnfocused();
+            }
+        }
     }
 
     /** Refits the glass to the focused holder once the grid layout and tile dimensions settle. */
@@ -2196,6 +2227,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         glass.animate().cancel();
         if (animations && !reducedMotion) glass.animate().alpha(0f).setDuration(160).start();
         else glass.setAlpha(0f);
+        if (movieSlideshowManager != null) movieSlideshowManager.onNovaUnfocused();
     }
 
     // ---- optional system stats (config.xml show_stats) --------------------------------------------
