@@ -241,7 +241,29 @@ public final class RecentAppsDrawer {
         optionsView.post(btnClose::requestFocus);
     }
 
-    private long lastOptionsOpened = 0;
+    private long lastActionTime = 0;
+
+    private void closeAndRemove(RecentAppsManager.RecentApp app, View anchor, int position) {
+        lastActionTime = System.currentTimeMillis();
+        dismissOptions();
+        RecentAppsManager.closeApp(activity, app.pkg);
+        Toast.makeText(activity, activity.getString(R.string.app_closed, app.label), Toast.LENGTH_SHORT).show();
+
+        int currentPos = apps.indexOf(app);
+        if (currentPos >= 0) {
+            apps.remove(currentPos);
+            adapter.notifyItemRemoved(currentPos);
+            if (apps.isEmpty()) {
+                dismiss();
+            } else {
+                int nextPos = Math.min(Math.max(0, currentPos), apps.size() - 1);
+                recentsList.post(() -> {
+                    RecyclerView.ViewHolder vh = recentsList.findViewHolderForAdapterPosition(nextPos);
+                    if (vh != null) vh.itemView.requestFocus();
+                });
+            }
+        }
+    }
 
     private class RecentsAdapter extends RecyclerView.Adapter<RecentsAdapter.ViewHolder> {
         @NonNull
@@ -259,7 +281,7 @@ public final class RecentAppsDrawer {
             holder.tvTime.setText(RecentAppsManager.formatRelativeTime(app.lastUsed));
 
             holder.itemView.setOnClickListener(v -> {
-                if (System.currentTimeMillis() - lastOptionsOpened < 600) return;
+                if (System.currentTimeMillis() - lastActionTime < 600) return;
                 dismiss();
                 RecentAppsManager.recordAppOpened(activity, app.pkg);
                 try {
@@ -270,8 +292,7 @@ public final class RecentAppsDrawer {
             });
 
             holder.itemView.setOnLongClickListener(v -> {
-                lastOptionsOpened = System.currentTimeMillis();
-                showOptionsDialog(app, holder.itemView, holder.getBindingAdapterPosition());
+                closeAndRemove(app, holder.itemView, holder.getBindingAdapterPosition());
                 return true;
             });
 
@@ -282,15 +303,14 @@ public final class RecentAppsDrawer {
                 }
                 if (keyCode == KeyEvent.KEYCODE_MENU) {
                     if (event.getAction() == KeyEvent.ACTION_DOWN) {
-                        lastOptionsOpened = System.currentTimeMillis();
+                        lastActionTime = System.currentTimeMillis();
                         showOptionsDialog(app, holder.itemView, holder.getBindingAdapterPosition());
                     }
                     return true;
                 }
                 if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
                     if (event.getAction() == KeyEvent.ACTION_DOWN && (event.isLongPress() || event.getRepeatCount() >= 1)) {
-                        lastOptionsOpened = System.currentTimeMillis();
-                        showOptionsDialog(app, holder.itemView, holder.getBindingAdapterPosition());
+                        closeAndRemove(app, holder.itemView, holder.getBindingAdapterPosition());
                         return true;
                     }
                 }
