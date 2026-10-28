@@ -62,6 +62,7 @@ public final class RecentAppsDrawer {
         popup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         popup.setOutsideTouchable(true);
         popup.setOnDismissListener(() -> {
+            isDismissing = false;
             dismissOptions();
             if (onDismissListener != null) onDismissListener.run();
         });
@@ -78,6 +79,7 @@ public final class RecentAppsDrawer {
     }
 
     public void show() {
+        isDismissing = false;
         // Load recent apps off UI thread to avoid any hitch
         Executors.newSingleThreadExecutor().execute(() -> {
             List<RecentAppsManager.RecentApp> loaded = RecentAppsManager.getRecentApps(activity);
@@ -101,6 +103,7 @@ public final class RecentAppsDrawer {
     }
 
     private void reveal() {
+        drawerRoot.setAlpha(1.0f);
         popup.showAtLocation(activity.getWindow().getDecorView(), Gravity.BOTTOM, 0, 0);
 
         View container = drawerRoot.getRootView();
@@ -150,6 +153,7 @@ public final class RecentAppsDrawer {
                     try {
                         popup.dismiss();
                     } catch (Exception ignored) {}
+                    isDismissing = false;
                 })
                 .start();
     }

@@ -67,27 +67,35 @@ public final class RecentAppsManager {
             }
             sp.edit().putString(KEY_RECENTS, sb.toString())
                     .putLong("time_" + pkg, System.currentTimeMillis())
+                    .remove("dismissed_" + pkg)
                     .apply();
         } catch (Throwable ignored) {}
     }
 
-    /** Removes an app from the recorded recent list. */
+    /** Removes an app from the recorded recent list and marks it dismissed. */
     public static synchronized void removeApp(Context ctx, String pkg) {
         if (pkg == null || ctx == null) return;
         try {
             SharedPreferences sp = ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
             String current = sp.getString(KEY_RECENTS, "");
-            if (current.isEmpty()) return;
             List<String> list = new ArrayList<>();
-            for (String p : current.split(",")) {
-                if (!p.isEmpty() && !p.equals(pkg)) list.add(p);
+            if (!current.isEmpty()) {
+                for (String p : current.split(",")) {
+                    if (!p.isEmpty() && !p.equals(pkg)) list.add(p);
+                }
             }
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < list.size(); i++) {
                 if (i > 0) sb.append(",");
                 sb.append(list.get(i));
             }
-            sp.edit().putString(KEY_RECENTS, sb.toString()).remove("time_" + pkg).apply();
+            sp.edit().putString(KEY_RECENTS, sb.toString())
+                    .remove("time_" + pkg)
+                    .putLong("dismissed_" + pkg, System.currentTimeMillis())
+                    .apply();
+            try {
+                ctx.getSharedPreferences("last_opened", Context.MODE_PRIVATE).edit().remove(pkg).apply();
+            } catch (Throwable ignored) {}
         } catch (Throwable ignored) {}
     }
 
@@ -99,12 +107,9 @@ public final class RecentAppsManager {
             if (am != null) {
                 am.killBackgroundProcesses(pkg);
             }
-            removeApp(ctx, pkg);
-            return true;
-        } catch (Throwable e) {
-            removeApp(ctx, pkg);
-            return false;
-        }
+        } catch (Throwable ignored) {}
+        removeApp(ctx, pkg);
+        return true;
     }
 
     /** Retrieves list of recent apps sorted by last used time. */
@@ -125,14 +130,16 @@ public final class RecentAppsManager {
                 if (agg != null && !agg.isEmpty()) {
                     for (Map.Entry<String, UsageStats> e : agg.entrySet()) {
                         long last = e.getValue().getLastTimeUsed();
-                        if (last > 0) timeMap.put(e.getKey(), last);
+                        long dismissed = sp.getLong("dismissed_" + e.getKey(), 0L);
+                        if (last > 0 && last > dismissed) timeMap.put(e.getKey(), last);
                     }
                 }
                 List<UsageStats> stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_BEST, start, now);
                 if (stats != null) {
                     for (UsageStats u : stats) {
                         long last = u.getLastTimeUsed();
-                        if (last > 0) {
+                        long dismissed = sp.getLong("dismissed_" + u.getPackageName(), 0L);
+                        if (last > 0 && last > dismissed) {
                             long curr = timeMap.getOrDefault(u.getPackageName(), 0L);
                             timeMap.put(u.getPackageName(), Math.max(last, curr));
                         }
@@ -149,8 +156,11 @@ public final class RecentAppsManager {
                 for (Map.Entry<String, ?> e : all.entrySet()) {
                     if (e.getValue() instanceof Number) {
                         long t = ((Number) e.getValue()).longValue();
-                        long curr = timeMap.getOrDefault(e.getKey(), 0L);
-                        timeMap.put(e.getKey(), Math.max(t, curr));
+                        long dismissed = sp.getLong("dismissed_" + e.getKey(), 0L);
+                        if (t > dismissed) {
+                            long curr = timeMap.getOrDefault(e.getKey(), 0L);
+                            timeMap.put(e.getKey(), Math.max(t, curr));
+                        }
                     }
                 }
             }
@@ -162,8 +172,11 @@ public final class RecentAppsManager {
             for (String p : recorded.split(",")) {
                 if (!p.isEmpty()) {
                     long t = sp.getLong("time_" + p, 0);
-                    long current = timeMap.getOrDefault(p, 0L);
-                    timeMap.put(p, Math.max(t, current));
+                    long dismissed = sp.getLong("dismissed_" + p, 0L);
+                    if (t > dismissed) {
+                        long current = timeMap.getOrDefault(p, 0L);
+                        timeMap.put(p, Math.max(t, current));
+                    }
                 }
             }
         }
@@ -186,6 +199,8 @@ public final class RecentAppsManager {
 
         for (Map.Entry<String, Long> entry : sorted) {
             String pkg = entry.getKey();
+            long dismissed = sp.getLong("dismissed_" + pkg, 0L);
+            if (entry.getValue() <= dismissed) continue;
             if (excluded.contains(pkg) || added.contains(pkg)) continue;
             RecentApp app = resolveRecentApp(pm, pkg, entry.getValue());
             if (app != null) {
@@ -199,37 +214,18 @@ public final class RecentAppsManager {
         if (!recorded.isEmpty() && result.size() < MAX_RECENTS) {
             for (String p : recorded.split(",")) {
                 if (!p.isEmpty() && !excluded.contains(p) && !added.contains(p)) {
-                    RecentApp app = resolveRecentApp(pm, p, sp.getLong("time_" + p, 0));
-                    if (app != null) {
-                        result.add(app);
-                        added.add(p);
-                        if (result.size() >= MAX_RECENTS) break;
-                    }
-                }
-            }
-        }
-
-        // Fallback: if user has no recent usage yet, seed with installed TV apps
-        if (result.size() < 4) {
-            try {
-                List<ResolveInfo> installed = pm.queryIntentActivities(
-                        new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER), 0);
-                if (installed != null) {
-                    for (ResolveInfo ri : installed) {
-                        if (ri.activityInfo != null) {
-                            String p = ri.activityInfo.packageName;
-                            if (!excluded.contains(p) && !added.contains(p)) {
-                                RecentApp app = resolveRecentApp(pm, p, 0L);
-                                if (app != null) {
-                                    result.add(app);
-                                    added.add(p);
-                                    if (result.size() >= MAX_RECENTS) break;
-                                }
-                            }
+                    long dismissed = sp.getLong("dismissed_" + p, 0L);
+                    long t = sp.getLong("time_" + p, 0);
+                    if (t > dismissed) {
+                        RecentApp app = resolveRecentApp(pm, p, t);
+                        if (app != null) {
+                            result.add(app);
+                            added.add(p);
+                            if (result.size() >= MAX_RECENTS) break;
                         }
                     }
                 }
-            } catch (Throwable ignored) {}
+            }
         }
 
         return result;
