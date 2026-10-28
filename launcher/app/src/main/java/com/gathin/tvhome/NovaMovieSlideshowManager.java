@@ -118,9 +118,10 @@ public final class NovaMovieSlideshowManager {
         };
 
         loadFeed();
-        // Pre-decode initial slide so it is instant
-        if (!items.isEmpty()) {
-            executor.execute(() -> loadBitmap(items.get(0)));
+        // Pre-decode initial slides so they are instant
+        for (int i = 0; i < Math.min(items.size(), 4); i++) {
+            final int idx = i;
+            executor.execute(() -> loadBitmap(items.get(idx)));
         }
     }
 
@@ -250,6 +251,15 @@ public final class NovaMovieSlideshowManager {
     private void displaySlide(int index, boolean crossfade) {
         if (index < 0 || index >= items.size()) return;
         MovieItem item = items.get(index);
+        String cacheKey = (item.asset != null ? item.asset : "") + "|" + (item.url != null ? item.url : "");
+        Bitmap cached = bitmapCache.get(cacheKey);
+
+        if (cached != null && !cached.isRecycled()) {
+            showBitmapOnView(cached, item, crossfade);
+            int nextIndex = (index + 1) % items.size();
+            executor.execute(() -> loadBitmap(items.get(nextIndex)));
+            return;
+        }
 
         executor.execute(() -> {
             Bitmap bitmap = loadBitmap(item);
@@ -327,8 +337,13 @@ public final class NovaMovieSlideshowManager {
 
         Bitmap decoded = null;
 
-        // 1. Try URL if present (using disk cache)
-        if (item.url != null && !item.url.isEmpty()) {
+        // 1. Try bundled asset first (instant local access)
+        if (item.asset != null && !item.asset.isEmpty()) {
+            decoded = decodeAsset(item.asset);
+        }
+
+        // 2. Try URL if bundled asset decode was not available
+        if (decoded == null && item.url != null && !item.url.isEmpty()) {
             String hash = String.valueOf(Math.abs(item.url.hashCode()));
             File diskFile = new File(diskCacheDir, "poster_" + hash + ".jpg");
             if (!diskFile.exists() || diskFile.length() == 0) {
@@ -337,11 +352,6 @@ public final class NovaMovieSlideshowManager {
             if (diskFile.exists() && diskFile.length() > 0) {
                 decoded = decodeFile(diskFile);
             }
-        }
-
-        // 2. Try bundled asset if URL decode failed or not available
-        if (decoded == null && item.asset != null && !item.asset.isEmpty()) {
-            decoded = decodeAsset(item.asset);
         }
 
         if (decoded != null) {
@@ -393,14 +403,7 @@ public final class NovaMovieSlideshowManager {
             opts.inPreferredConfig = Bitmap.Config.RGB_565;
 
             try (InputStream is = context.getAssets().open(assetPath)) {
-                Bitmap bmp = BitmapFactory.decodeStream(is, null, opts);
-                if (bmp == null) return null;
-                Bitmap hardware = bmp.copy(Bitmap.Config.HARDWARE, false);
-                if (hardware != null) {
-                    bmp.recycle();
-                    return hardware;
-                }
-                return bmp;
+                return BitmapFactory.decodeStream(is, null, opts);
             }
         } catch (Exception | OutOfMemoryError e) {
             Log.w(TAG, "Error decoding asset: " + assetPath + " -> " + e.getMessage());
@@ -421,14 +424,7 @@ public final class NovaMovieSlideshowManager {
             opts.inSampleSize = WallpaperSize.sampleSize(w, h, screenWidth, screenHeight);
             opts.inPreferredConfig = Bitmap.Config.RGB_565;
 
-            Bitmap bmp = BitmapFactory.decodeFile(file.getPath(), opts);
-            if (bmp == null) return null;
-            Bitmap hardware = bmp.copy(Bitmap.Config.HARDWARE, false);
-            if (hardware != null) {
-                bmp.recycle();
-                return hardware;
-            }
-            return bmp;
+            return BitmapFactory.decodeFile(file.getPath(), opts);
         } catch (Exception | OutOfMemoryError e) {
             Log.w(TAG, "Error decoding file: " + file.getPath() + " -> " + e.getMessage());
             return null;
