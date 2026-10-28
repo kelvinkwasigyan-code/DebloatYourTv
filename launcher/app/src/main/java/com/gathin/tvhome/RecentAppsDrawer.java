@@ -122,7 +122,11 @@ public final class RecentAppsDrawer {
                         if (!apps.isEmpty()) {
                             recentsList.post(() -> {
                                 View first = recentsList.getChildAt(0);
-                                if (first != null) first.requestFocus();
+                                if (first != null) {
+                                    View card = first.findViewById(R.id.recentCard);
+                                    if (card != null) card.requestFocus();
+                                    else first.requestFocus();
+                                }
                             });
                         } else {
                             drawerRoot.requestFocus();
@@ -177,26 +181,7 @@ public final class RecentAppsDrawer {
         optionsPopup.setOutsideTouchable(true);
 
         btnClose.setOnClickListener(v -> {
-            RecentAppsManager.closeApp(activity, app.pkg);
-            Toast.makeText(activity, activity.getString(R.string.app_closed, app.label), Toast.LENGTH_SHORT).show();
-
-            int currentPos = apps.indexOf(app);
-            if (currentPos >= 0) {
-                apps.remove(currentPos);
-                adapter.notifyItemRemoved(currentPos);
-            }
-            v.post(() -> {
-                dismissOptions();
-                if (apps.isEmpty()) {
-                    dismiss();
-                } else {
-                    int nextPos = Math.min(Math.max(0, currentPos), apps.size() - 1);
-                    recentsList.post(() -> {
-                        RecyclerView.ViewHolder vh = recentsList.findViewHolderForAdapterPosition(nextPos);
-                        if (vh != null) vh.itemView.requestFocus();
-                    });
-                }
-            });
+            closeAndRemove(app, anchor, position);
         });
 
         btnInfo.setOnClickListener(v -> {
@@ -213,7 +198,7 @@ public final class RecentAppsDrawer {
 
         btnCancel.setOnClickListener(v -> {
             dismissOptions();
-            anchor.requestFocus();
+            if (anchor != null) anchor.requestFocus();
         });
 
         optionsPopup.showAtLocation(activity.getWindow().getDecorView(), Gravity.CENTER, 0, 0);
@@ -229,7 +214,7 @@ public final class RecentAppsDrawer {
         View.OnKeyListener dismissOnBack = (v, keyCode, event) -> {
             if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_BACK) {
                 dismissOptions();
-                anchor.requestFocus();
+                if (anchor != null) anchor.requestFocus();
                 return true;
             }
             return false;
@@ -241,10 +226,7 @@ public final class RecentAppsDrawer {
         optionsView.post(btnClose::requestFocus);
     }
 
-    private long lastActionTime = 0;
-
     private void closeAndRemove(RecentAppsManager.RecentApp app, View anchor, int position) {
-        lastActionTime = System.currentTimeMillis();
         dismissOptions();
         RecentAppsManager.closeApp(activity, app.pkg);
         Toast.makeText(activity, activity.getString(R.string.app_closed, app.label), Toast.LENGTH_SHORT).show();
@@ -259,7 +241,11 @@ public final class RecentAppsDrawer {
                 int nextPos = Math.min(Math.max(0, currentPos), apps.size() - 1);
                 recentsList.post(() -> {
                     RecyclerView.ViewHolder vh = recentsList.findViewHolderForAdapterPosition(nextPos);
-                    if (vh != null) vh.itemView.requestFocus();
+                    if (vh instanceof RecentsAdapter.ViewHolder) {
+                        ((RecentsAdapter.ViewHolder) vh).card.requestFocus();
+                    } else if (vh != null) {
+                        vh.itemView.requestFocus();
+                    }
                 });
             }
         }
@@ -280,8 +266,8 @@ public final class RecentAppsDrawer {
             holder.tvLabel.setText(app.label);
             holder.tvTime.setText(RecentAppsManager.formatRelativeTime(app.lastUsed));
 
-            holder.itemView.setOnClickListener(v -> {
-                if (System.currentTimeMillis() - lastActionTime < 600) return;
+            // Card click -> Open app
+            holder.card.setOnClickListener(v -> {
                 dismiss();
                 RecentAppsManager.recordAppOpened(activity, app.pkg);
                 try {
@@ -291,37 +277,63 @@ public final class RecentAppsDrawer {
                 }
             });
 
-            holder.itemView.setOnLongClickListener(v -> {
-                closeAndRemove(app, holder.itemView, holder.getBindingAdapterPosition());
-                return true;
-            });
-
-            holder.itemView.setOnKeyListener((v, keyCode, event) -> {
+            // Card key events
+            holder.card.setOnKeyListener((v, keyCode, event) -> {
                 if (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_BACK) {
                     if (event.getAction() == KeyEvent.ACTION_DOWN) dismiss();
                     return true;
                 }
                 if (keyCode == KeyEvent.KEYCODE_MENU) {
                     if (event.getAction() == KeyEvent.ACTION_DOWN) {
-                        lastActionTime = System.currentTimeMillis();
-                        showOptionsDialog(app, holder.itemView, holder.getBindingAdapterPosition());
+                        showOptionsDialog(app, holder.card, holder.getBindingAdapterPosition());
                     }
                     return true;
                 }
-                if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
-                    if (event.getAction() == KeyEvent.ACTION_DOWN && (event.isLongPress() || event.getRepeatCount() >= 1)) {
-                        closeAndRemove(app, holder.itemView, holder.getBindingAdapterPosition());
-                        return true;
+                if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                    if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                        holder.btnClose.requestFocus();
                     }
+                    return true;
                 }
                 return false;
             });
 
-            holder.itemView.setOnFocusChangeListener((v, hasFocus) -> {
+            holder.card.setOnFocusChangeListener((v, hasFocus) -> {
                 if (hasFocus) {
-                    v.animate().scaleX(1.08f).scaleY(1.08f).setDuration(160).start();
+                    v.animate().scaleX(1.06f).scaleY(1.06f).setDuration(160).start();
                 } else {
                     v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(140).start();
+                }
+            });
+
+            // Close button click -> Close & remove app
+            holder.btnClose.setOnClickListener(v -> {
+                closeAndRemove(app, holder.card, holder.getBindingAdapterPosition());
+            });
+
+            // Close button key events
+            holder.btnClose.setOnKeyListener((v, keyCode, event) -> {
+                if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    if (event.getAction() == KeyEvent.ACTION_DOWN) dismiss();
+                    return true;
+                }
+                if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+                    if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                        holder.card.requestFocus();
+                    }
+                    return true;
+                }
+                if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                    return true;
+                }
+                return false;
+            });
+
+            holder.btnClose.setOnFocusChangeListener((v, hasFocus) -> {
+                if (hasFocus) {
+                    v.animate().scaleX(1.08f).scaleY(1.08f).setDuration(150).start();
+                } else {
+                    v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(130).start();
                 }
             });
         }
@@ -332,15 +344,19 @@ public final class RecentAppsDrawer {
         }
 
         class ViewHolder extends RecyclerView.ViewHolder {
+            final View card;
             final ImageView ivIcon;
             final TextView tvLabel;
             final TextView tvTime;
+            final TextView btnClose;
 
             ViewHolder(@NonNull View itemView) {
                 super(itemView);
+                card = itemView.findViewById(R.id.recentCard);
                 ivIcon = itemView.findViewById(R.id.recentIcon);
                 tvLabel = itemView.findViewById(R.id.recentLabel);
                 tvTime = itemView.findViewById(R.id.recentTime);
+                btnClose = itemView.findViewById(R.id.recentBtnClose);
             }
         }
     }

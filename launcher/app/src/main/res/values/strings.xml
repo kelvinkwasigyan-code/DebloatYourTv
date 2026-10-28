@@ -163,9 +163,10 @@
     <string name="pair_new_device">Pair new device</string>
     <string name="remotes_and_accessories">Remotes &amp; Accessories</string>
     <string name="recent_apps">Recent Apps</string>
-    <string name="recent_apps_hint">Hold OK to remove · ▲ Back</string>
+    <string name="recent_apps_hint">▼ to Close · ▲ Back</string>
     <string name="recent_apps_empty">No recent apps</string>
     <string name="close_app">Close App</string>
+    <string name="close_pill">Close</string>
     <string name="app_info">App Info</string>
     <string name="app_closed">Closed %1$s</string>
 </resources>
