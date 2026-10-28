@@ -639,8 +639,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             // Keep the hero below the header when the library is enabled on a short screen,
             // even when the theme requests an extra visible row below the dock.
             int shelfClearance = cfg.appLibrary ? hero.getMeasuredHeight() + (int) (40 * density) : 0;
-            int libraryPillRoom = (cfg.appLibrary && cfg.showLibraryPill) ? (int) (68 * density) : 0;
-            int want = Math.max(shelfClearance, h - dockRow - gridRows - libraryPillRoom - (int) (AppAdapter.BOTTOM_ROOM_DP * density));
+            int libraryPillRoom = (cfg.appLibrary && cfg.showLibraryPill) ? (int) (44 * density) : 0;
+            int want = Math.max(shelfClearance, h - dockRow - gridRows - libraryPillRoom - (int) (14 * density));
             // Where the rows cannot fit even at the smallest tile (3 rows with the title on), the title keeps its
             // room above the dock and the last rows run off the bottom instead of the title drawing over the clock.
             if (MainActivity.this.dockRow && cfg.dockTitle && rowsBelowDock > 0) want = Math.max(want, (int) (AppAdapter.TITLE_ROOM_DP * density));

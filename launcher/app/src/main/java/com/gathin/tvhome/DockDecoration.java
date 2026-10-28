@@ -59,8 +59,8 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
         this.bandVisible = bandVisible;
         band.setColor(translucent ? 0x8C121014 : (Math.round(opacity * 2.55f) << 24) | 0x141416);
         edge.setStyle(Paint.Style.STROKE);
-        edge.setStrokeWidth(density);
-        edge.setColor(lightGlass ? 0x80FFFFFF : translucent ? 0x26FFFFFF : 0x38FFFFFF);
+        edge.setStrokeWidth(1.2f * density);
+        edge.setColor(lightGlass ? 0x80FFFFFF : translucent ? 0x26FFFFFF : 0x48FFFFFF);
     }
 
     /** Concentric corners: the band's radius is the tiles' radius plus the band's padding around them. */
@@ -141,14 +141,24 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
             rect.right = Math.min(rect.right, parent.getWidth() - density);
         }
         rect.bottom += namesRoom;
-        if (lightGlass && (rect.top != shaderTop || rect.bottom != shaderBottom)) {
-            // White blur frosted glass with reduced transparency (richer opacity based on dock_opacity)
-            int topAlpha = Math.min(255, Math.max(90, Math.round(255 * (0.45f + 0.40f * (opacity / 100f)))));
-            int bottomAlpha = Math.min(255, Math.max(60, Math.round(255 * (0.30f + 0.35f * (opacity / 100f)))));
-            int topColor = (topAlpha << 24) | 0x00FFFFFF;
-            int bottomColor = (bottomAlpha << 24) | 0x00FFFFFF;
-            band.setShader(new LinearGradient(0, rect.top, 0, rect.bottom, topColor, bottomColor,
-                    Shader.TileMode.CLAMP));
+        if (rect.top != shaderTop || rect.bottom != shaderBottom) {
+            if (lightGlass) {
+                // White blur frosted glass with reduced transparency (richer opacity based on dock_opacity)
+                int topAlpha = Math.min(255, Math.max(90, Math.round(255 * (0.45f + 0.40f * (opacity / 100f)))));
+                int bottomAlpha = Math.min(255, Math.max(60, Math.round(255 * (0.30f + 0.35f * (opacity / 100f)))));
+                int topColor = (topAlpha << 24) | 0x00FFFFFF;
+                int bottomColor = (bottomAlpha << 24) | 0x00FFFFFF;
+                band.setShader(new LinearGradient(0, rect.top, 0, rect.bottom, topColor, bottomColor,
+                        Shader.TileMode.CLAMP));
+            } else {
+                // Dark glass matching the All Apps pill with reduced transparency
+                int topAlpha = Math.min(255, Math.max(80, Math.round(255 * (0.40f + 0.30f * (opacity / 100f)))));
+                int bottomAlpha = Math.min(255, Math.max(70, Math.round(255 * (0.34f + 0.28f * (opacity / 100f)))));
+                int topColor = (topAlpha << 24) | 0x0024242A;
+                int bottomColor = (bottomAlpha << 24) | 0x00121216;
+                band.setShader(new LinearGradient(0, rect.top, 0, rect.bottom, topColor, bottomColor,
+                        Shader.TileMode.CLAMP));
+            }
             shaderTop = rect.top;
             shaderBottom = rect.bottom;
         }

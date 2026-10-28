@@ -11,9 +11,9 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="270"
-                android:startColor="#4524242A"
-                android:centerColor="#3518181E"
-                android:endColor="#25121216" />
+                android:startColor="#9A24242A"
+                android:centerColor="#8E18181E"
+                android:endColor="#84121216" />
             <stroke
                 android:width="1.2dp"
                 android:color="#48FFFFFF" />
