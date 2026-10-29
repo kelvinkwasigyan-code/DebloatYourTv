@@ -3,21 +3,23 @@
     <item android:state_focused="true">
         <shape android:shape="rectangle">
             <solid android:color="#F8FFFFFF" />
-            <stroke android:width="2dp" android:color="#FFFFFFFF" />
-            <corners android:radius="24dp" />
+            <stroke
+                android:width="2dp"
+                android:color="#FFFFFFFF" />
+            <corners android:radius="16dp" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
             <gradient
                 android:angle="270"
-                android:startColor="#9A24242A"
-                android:centerColor="#8E18181E"
-                android:endColor="#84121216" />
+                android:startColor="#2A242430"
+                android:centerColor="#1E1A1A22"
+                android:endColor="#14121216" />
             <stroke
-                android:width="1.2dp"
-                android:color="#48FFFFFF" />
-            <corners android:radius="24dp" />
+                android:width="1dp"
+                android:color="#22FFFFFF" />
+            <corners android:radius="16dp" />
         </shape>
     </item>
 </selector>

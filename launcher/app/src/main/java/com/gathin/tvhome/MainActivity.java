@@ -4,6 +4,9 @@ import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.app.Dialog;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -17,6 +20,11 @@ import android.content.pm.ResolveInfo;
 import android.content.pm.ChangedPackages;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
+import android.hardware.input.InputManager;
+import android.media.AudioDeviceCallback;
+import android.media.AudioDeviceInfo;
+import android.media.AudioManager;
+import android.view.InputDevice;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -188,6 +196,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
     private boolean showInputsPill = true;
     private TextView btnWifi;
+    private TextView btnBluetooth;
     private View btnProfile;
     private ImageView profileAvatar;
     private TextView profileInitial;
@@ -751,7 +760,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             open(systemIntent(Settings.ACTION_WIFI_SETTINGS));
             return true;
         });
-        View btnBluetooth = findViewById(R.id.btnBluetooth);
+        btnBluetooth = findViewById(R.id.btnBluetooth);
         if (btnBluetooth != null) {
             // The Bluetooth Connect add-on when it is installed, otherwise the TV's own Bluetooth settings.
             btnBluetooth.setOnClickListener(v -> {
@@ -769,7 +778,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnSettings.setOnClickListener(v -> {
             if (launcherSettingsButton) startActivityForResult(
                     new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST);
-            else open(systemIntent(Settings.ACTION_SETTINGS));
+            else open(settingsKeyPanel ? new Intent(this, QuickSettingsActivity.class)
+                    : systemIntent(Settings.ACTION_SETTINGS));
         });
         btnReorder = findViewById(R.id.btnReorder);
         btnReorder.setOnClickListener(v -> toggleReorder());
@@ -794,6 +804,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 wifiNoInternetTint = getColorStateList(R.color.pill_icon_no_internet);
                 wifiOfflineTint = getColorStateList(R.color.pill_icon_offline);
             }
+        }
+        bluetoothStatusColor = cfg.bluetoothStatusColor;
+        if (bluetoothStatusColor && btnBluetooth != null) {
+            bluetoothPlainTint = btnBluetooth.getCompoundDrawableTintList();
+            bluetoothConnectedTint = getColorStateList(R.color.pill_icon_bluetooth_connected);
+            initBluetoothMonitoring();
         }
         if (cfg.topMenu) {
             // One gear: Inputs and Wi-Fi move into its dropdown. The Wi-Fi pill stays hidden but keeps its
@@ -1131,6 +1147,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         } else {
             updateWifiLabel();
             updateInputsButton();
+            updateBluetoothStatus();
             pillsShown = true;
         }
         if (showStats) startStats();
@@ -1377,6 +1394,24 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             cm.unregisterNetworkCallback(vpnCallback);
         }
         if (nowPlayingCallback != null) NowPlayingManager.get().unregisterCallback(nowPlayingCallback);
+        if (bluetoothReceiver != null) {
+            try { unregisterReceiver(bluetoothReceiver); } catch (Throwable ignored) {}
+            bluetoothReceiver = null;
+        }
+        if (btAudioCallback != null) {
+            try {
+                AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                if (am != null) am.unregisterAudioDeviceCallback(btAudioCallback);
+            } catch (Throwable ignored) {}
+            btAudioCallback = null;
+        }
+        if (btInputListener != null) {
+            try {
+                InputManager im = (InputManager) getSystemService(Context.INPUT_SERVICE);
+                if (im != null) im.unregisterInputDeviceListener(btInputListener);
+            } catch (Throwable ignored) {}
+            btInputListener = null;
+        }
     }
 
     /**
@@ -1386,6 +1421,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * nothing even on Home.
      */
     private boolean handleSettingsKey(KeyEvent event) {
+        if (event.getKeyCode() == KeyEvent.KEYCODE_SETTINGS) {
+            if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
+                open(settingsKeyPanel ? new Intent(this, QuickSettingsActivity.class)
+                        : systemIntent(Settings.ACTION_SETTINGS));
+            }
+            return true;
+        }
         for (int code : settingsKeycodes) {
             if (event.getKeyCode() != code) continue;
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
@@ -2801,6 +2843,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     if (isDestroyed()) return;
                     updateWifiLabel();
                     updateInputsButton();
+                    updateBluetoothStatus();
                 });
                 return true;
             }
@@ -2920,6 +2963,173 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private ColorStateList wifiOnlineTint, wifiPlainTint;
     /** wifi_status_warnings (with wifi_status_color): orange without internet, red offline; null while off. */
     private ColorStateList wifiNoInternetTint, wifiOfflineTint;
+    /** config.xml bluetooth_status_color: the Bluetooth icon's blue while connected to a device; null while off. */
+    private ColorStateList bluetoothConnectedTint, bluetoothPlainTint;
+    private boolean bluetoothStatusColor;
+    private final Set<String> connectedBtDevices = new HashSet<>();
+    private BroadcastReceiver bluetoothReceiver;
+    private AudioDeviceCallback btAudioCallback;
+    private InputManager.InputDeviceListener btInputListener;
+
+    private void initBluetoothMonitoring() {
+        if (bluetoothReceiver != null) return;
+        bluetoothReceiver = new BroadcastReceiver() {
+            @Override public void onReceive(Context context, Intent intent) {
+                String action = intent != null ? intent.getAction() : null;
+                if (action == null) return;
+                if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+                    BluetoothDevice dev;
+                    if (android.os.Build.VERSION.SDK_INT >= 33) {
+                        dev = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
+                    } else {
+                        dev = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    }
+                    if (dev != null && !isTvRemote(dev)) {
+                        connectedBtDevices.add(dev.getAddress());
+                    }
+                } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+                    BluetoothDevice dev;
+                    if (android.os.Build.VERSION.SDK_INT >= 33) {
+                        dev = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
+                    } else {
+                        dev = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    }
+                    if (dev != null) {
+                        connectedBtDevices.remove(dev.getAddress());
+                    }
+                }
+                updateBluetoothStatus();
+            }
+        };
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        filter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
+        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+        registerReceiver(bluetoothReceiver, filter);
+
+        try {
+            AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            if (am != null) {
+                btAudioCallback = new AudioDeviceCallback() {
+                    @Override public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
+                        updateBluetoothStatus();
+                    }
+                    @Override public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
+                        updateBluetoothStatus();
+                    }
+                };
+                am.registerAudioDeviceCallback(btAudioCallback, handler);
+            }
+        } catch (Throwable ignored) {}
+
+        try {
+            InputManager im = (InputManager) getSystemService(Context.INPUT_SERVICE);
+            if (im != null) {
+                btInputListener = new InputManager.InputDeviceListener() {
+                    @Override public void onInputDeviceAdded(int deviceId) { updateBluetoothStatus(); }
+                    @Override public void onInputDeviceRemoved(int deviceId) { updateBluetoothStatus(); }
+                    @Override public void onInputDeviceChanged(int deviceId) { updateBluetoothStatus(); }
+                };
+                im.registerInputDeviceListener(btInputListener, handler);
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    private static boolean isTvRemote(BluetoothDevice device) {
+        if (device == null) return false;
+        try {
+            String name = device.getName();
+            if (name != null) {
+                String lower = name.toLowerCase();
+                if (lower.contains("remote") || lower.contains("voice") || lower.contains("onn-") || lower.contains("bt_rc")) {
+                    return true;
+                }
+            }
+        } catch (SecurityException ignored) {}
+        return false;
+    }
+
+    private boolean isBluetoothDeviceConnected() {
+        // 1. Audio output devices (headphones, soundbars, Bluetooth speakers)
+        try {
+            AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            if (am != null) {
+                for (AudioDeviceInfo dev : am.getDevices(AudioManager.GET_DEVICES_OUTPUTS)) {
+                    int type = dev.getType();
+                    if (type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
+                            || type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+                            || type == 26 /* TYPE_BLE_HEADSET */
+                            || type == 27 /* TYPE_BLE_SPEAKER */
+                            || type == 30 /* TYPE_BLE_BROADCAST */
+                            || type == 23 /* TYPE_HEARING_AID */) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        // 2. External gamepads / controllers
+        try {
+            InputManager im = (InputManager) getSystemService(Context.INPUT_SERVICE);
+            if (im != null) {
+                for (int id : im.getInputDeviceIds()) {
+                    InputDevice dev = im.getInputDevice(id);
+                    if (dev != null && !dev.isVirtual()) {
+                        if (GamepadPassthrough.isGamepad(dev.getSources())) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        // 3. Bluetooth profiles (A2DP, Headset)
+        try {
+            BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+            if (adapter != null && adapter.isEnabled()) {
+                if (adapter.getProfileConnectionState(BluetoothProfile.A2DP) == BluetoothProfile.STATE_CONNECTED
+                        || adapter.getProfileConnectionState(BluetoothProfile.HEADSET) == BluetoothProfile.STATE_CONNECTED) {
+                    return true;
+                }
+            }
+        } catch (RuntimeException ignored) {}
+
+        // 4. Actively tracked connected ACL devices (excluding TV remote)
+        if (!connectedBtDevices.isEmpty()) {
+            return true;
+        }
+
+        // 5. Bonded non-remote devices checked via isConnected()
+        try {
+            BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+            if (adapter != null && adapter.isEnabled()) {
+                Set<BluetoothDevice> bonded = adapter.getBondedDevices();
+                if (bonded != null) {
+                    for (BluetoothDevice dev : bonded) {
+                        if (isTvRemote(dev)) continue;
+                        try {
+                            java.lang.reflect.Method isConnected = dev.getClass().getMethod("isConnected");
+                            if (Boolean.TRUE.equals(isConnected.invoke(dev))) {
+                                return true;
+                            }
+                        } catch (Throwable ignored) {}
+                    }
+                }
+            }
+        } catch (RuntimeException ignored) {}
+
+        return false;
+    }
+
+    private void updateBluetoothStatus() {
+        if (btnBluetooth == null || !bluetoothStatusColor || bluetoothConnectedTint == null) return;
+        boolean connected = isBluetoothDeviceConnected();
+        ColorStateList tint = connected ? bluetoothConnectedTint : bluetoothPlainTint;
+        if (btnBluetooth.getCompoundDrawableTintList() != tint) {
+            btnBluetooth.setCompoundDrawableTintList(tint);
+        }
+    }
     /** The app library button in the top bar (library_button). */
     private View btnLibraryTop;
     /** The open library came from that button: closing it returns there instead of scrolling to the grid's end. */
