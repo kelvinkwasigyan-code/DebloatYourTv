@@ -1,37 +1,17 @@
 {
   "greeting_name": "Sweetie",
   "wallpaper": true,
-  "wallpaper_rotation_minutes": 8,
+  "wallpaper_rotation_minutes": 5,
   "wallpaper_order": "shuffle",
   "wallpaper_captions": false,
   "wallpaper_dim": 20,
   "dock_opacity": 85,
   "dock_glass": false,
   "app_library": true,
+  "tile_menu": true,
   "library_ok_opens": true,
+  "launcher_settings_button": true,
+  "wifi_label_width": 180,
   "ambient_glow": false,
-  "app_glow": true,
-  "wallpaper_moods": {
-    "morning": [
-      "001.jpg",
-      "002.jpg",
-      "003.jpg",
-      "004.jpg",
-      "005.jpg",
-      "006.jpg",
-      "007.jpg"
-    ],
-    "evening": [
-      "008_night_tokyo.jpg",
-      "009_night_hongkong.jpg",
-      "010_night_manhattan.jpg",
-      "011_night_dubai.jpg"
-    ],
-    "night": [
-      "008_night_tokyo.jpg",
-      "009_night_hongkong.jpg",
-      "010_night_manhattan.jpg",
-      "011_night_dubai.jpg"
-    ]
-  }
+  "app_glow": true
 }

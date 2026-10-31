@@ -57,9 +57,24 @@
     <string name="wallpaper_none">None</string>
     <string name="wallpaper_applied">Wallpaper changed</string>
     <string name="wallpaper_theme_default">Theme default</string>
+    <string name="wallpaper_rotation_label">Dynamic wallpaper rotation</string>
+    <string name="wallpaper_rotation_state">Dynamic wallpaper: %1$s</string>
+    <string name="rotation_5m">Every 5 minutes</string>
+    <string name="rotation_15m">Every 15 minutes</string>
+    <string name="rotation_30m">Every 30 minutes</string>
+    <string name="rotation_60m">Every 1 hour</string>
+    <string name="dock_glass_state">Dock frosted glass: %1$s</string>
+    <string name="glow_effects_state">App &amp; ambient glow: %1$s</string>
+    <string name="wifi_label_state">Wi-Fi pill: %1$s</string>
+    <string name="wifi_label_name">Expanded (Show network name)</string>
+    <string name="wifi_label_icon">Compact (Icon only)</string>
     <string name="animations_state">Animations: %1$s</string>
     <string name="advanced_effects">Advanced effects</string>
     <string name="advanced_effects_state">Advanced effects: %1$s</string>
+    <string name="put_on_dock">Put on dock\u2026</string>
+    <string name="replace_dock_title">Replace dock app</string>
+    <string name="dock_slot_label">Slot %1$d: %2$s</string>
+    <string name="dock_app_replaced">%1$s placed on dock (replaced %2$s)</string>
     <string name="open_on_start_label">Open on start</string>
     <string name="open_on_start_state">Open on start: %1$s</string>
     <string name="advanced_effects_warning">Adds a lifted tile, icon zoom and smooth colour transitions. May increase memory use; the actual difference depends on your TV.</string>
@@ -105,6 +120,7 @@
     <string name="dock_edit_pick_place">Choose the dock place for this app and press OK. Back to cancel.</string>
     <string name="reorder">Reorder apps</string>
     <string name="tile_move">Move</string>
+    <string name="tile_reorder">Reorder</string>
     <string name="reorder_hint">OK picks up an app, arrows move it, Back places it. Back again to finish.</string>
     <string name="reorder_not_saved">Couldn\'t save the new order</string>
     <string name="app_library">All Apps</string>
@@ -169,4 +185,6 @@
     <string name="close_pill">Close</string>
     <string name="app_info">App Info</string>
     <string name="app_closed">Closed %1$s</string>
+    <string name="not_playing">Not Playing</string>
+    <string name="music_player">Music</string>
 </resources>

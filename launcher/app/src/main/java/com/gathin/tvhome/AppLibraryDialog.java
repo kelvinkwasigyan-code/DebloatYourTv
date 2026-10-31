@@ -1,6 +1,7 @@
 package com.gathin.tvhome;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -553,6 +554,7 @@ final class AppLibraryDialog {
             restoreCardFocus();
         });
         addAction(rows, R.string.library_open, () -> open(app));
+        addAction(rows, R.string.put_on_dock, () -> showDockSlotPicker(app));
         boolean home = onHome.test(pkg);
         addAction(rows, home ? R.string.library_remove_shortcut : R.string.library_add_home,
                 () -> changeHome(app, !home));
@@ -590,6 +592,29 @@ final class AppLibraryDialog {
         menuPanel.animate().alpha(1f).scaleY(1f).translationY(0f).setDuration(reducedMotion ? Motion.REDUCED_MS : 220)
                 .setInterpolator(new android.view.animation.DecelerateInterpolator(1.6f)).start();
         rows.getChildAt(0).requestFocus();
+    }
+
+    private void showDockSlotPicker(ResolveInfo app) {
+        dismissActions();
+        if (!(activity instanceof MainActivity)) return;
+        MainActivity main = (MainActivity) activity;
+        List<String> dockLabels = main.getDockLabels();
+        if (dockLabels.isEmpty()) return;
+
+        String[] items = new String[dockLabels.size()];
+        for (int i = 0; i < dockLabels.size(); i++) {
+            items[i] = activity.getString(R.string.dock_slot_label, i + 1, dockLabels.get(i));
+        }
+
+        new AlertDialog.Builder(activity)
+                .setTitle(R.string.replace_dock_title)
+                .setItems(items, (dialog, which) -> {
+                    dialog.dismiss();
+                    main.replaceDockSlot(which, app);
+                    refresh();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     private void addAction(LinearLayout rows, int label, Runnable action) {

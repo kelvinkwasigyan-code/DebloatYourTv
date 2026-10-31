@@ -9,3 +9,22 @@
 009_night_hongkong.jpg	Victoria Harbour at Night, Hong Kong
 010_night_manhattan.jpg	Manhattan & Brooklyn Bridge at Night, New York
 011_night_dubai.jpg	Burj Khalifa & Downtown Dubai at Night
+012_dusk_peaks.jpg	Dusk Mountain Peaks
+013_golden_coast.jpg	Golden Coast & Ocean Cliffs
+014_moon_lake.jpg	Moon Lake Reflection
+015_aurora.jpg	Northern Lights Aurora Borealis
+016_desert_dunes.jpg	Golden Desert Sand Dunes
+017_above_clouds.jpg	Above the Clouds Sunset
+018_mirror_lake.jpg	Alpine Mirror Lake Reflection
+019_alpenglow.jpg	Snowy Alpenglow Mountain Peaks
+020_balloon_sunrise.jpg	Hot Air Balloons Sunrise, Cappadocia
+021_autumn_valley.jpg	Autumn River Valley
+022_lighthouse_coast.jpg	Coastal Lighthouse & Pacific Vista
+023_tea_hills.jpg	Rolling Green Tea Hills
+024_monsoon.jpg	Misty Monsoon Mist & Lake
+025_nature_waterfall.jpg	Turquoise Alpine Waterfall
+026_forest_path.jpg	Serene Mountain Forest Trail
+027_mountain_lake.jpg	Crystal Mountain Lake
+028_pine_forest.jpg	Misty Pine Forest at Dawn
+029_nature_stream.jpg	Peaceful Alpine Stream
+030_autumn_ruska.jpg	Golden Ruska Autumn Woods

@@ -492,24 +492,24 @@
                 </FrameLayout>
             </LinearLayout>
 
-            <!-- Now Playing pill: displays equalizer animation, song info, and transport controls -->
+            <!-- Now Playing pill: displays album art, equalizer, song info, duration progress, and transport controls -->
             <LinearLayout
                 android:id="@+id/nowPlayingPill"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_below="@+id/topButtons"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="8dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:background="@drawable/now_playing_bg"
-                android:paddingStart="12dp"
+                android:paddingStart="8dp"
                 android:paddingEnd="12dp"
-                android:paddingTop="5dp"
-                android:paddingBottom="5dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
                 android:clipChildren="false"
                 android:clipToPadding="false"
-                android:visibility="gone">
+                android:visibility="visible">
 
                 <!-- Track info area: focusable/clickable to open the music app -->
                 <LinearLayout
@@ -523,14 +523,19 @@
                     android:background="@drawable/now_playing_info_bg"
                     android:paddingStart="6dp"
                     android:paddingEnd="10dp"
-                    android:paddingTop="4dp"
-                    android:paddingBottom="4dp">
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp">
 
-                    <com.gathin.tvhome.EqualizerView
-                        android:id="@+id/nowPlayingEqualizer"
-                        android:layout_width="16dp"
-                        android:layout_height="14dp"
-                        android:layout_marginEnd="9dp" />
+                    <!-- Album Cover Art (or fallback music icon) -->
+                    <ImageView
+                        android:id="@+id/nowPlayingArt"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_marginEnd="10dp"
+                        android:scaleType="centerInside"
+                        android:background="@drawable/now_playing_art_bg"
+                        android:src="@drawable/ic_audio_output"
+                        android:contentDescription="@string/audio_output" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -539,49 +544,82 @@
                         android:gravity="center_vertical"
                         android:duplicateParentState="true">
 
-                        <TextView
-                            android:id="@+id/nowPlayingTitle"
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:maxWidth="170dp"
-                            android:singleLine="true"
-                            android:ellipsize="marquee"
-                            android:marqueeRepeatLimit="marquee_forever"
-                            android:scrollHorizontally="true"
-                            android:textColor="@drawable/pill_text"
-                            android:duplicateParentState="true"
-                            android:textSize="13sp"
-                            android:fontFamily="@string/font_medium"
-                            android:letterSpacing="0.01" />
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:duplicateParentState="true">
+
+                            <com.gathin.tvhome.EqualizerView
+                                android:id="@+id/nowPlayingEqualizer"
+                                android:layout_width="14dp"
+                                android:layout_height="12dp"
+                                android:layout_marginEnd="6dp"
+                                android:visibility="gone" />
+
+                            <TextView
+                                android:id="@+id/nowPlayingTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="100dp"
+                                android:maxWidth="175dp"
+                                android:singleLine="true"
+                                android:ellipsize="marquee"
+                                android:marqueeRepeatLimit="marquee_forever"
+                                android:scrollHorizontally="true"
+                                android:textColor="@drawable/pill_text"
+                                android:duplicateParentState="true"
+                                android:text="@string/not_playing"
+                                android:textSize="13sp"
+                                android:fontFamily="@string/font_medium"
+                                android:letterSpacing="0.01" />
+                        </LinearLayout>
 
                         <TextView
                             android:id="@+id/nowPlayingArtist"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:maxWidth="170dp"
+                            android:minWidth="100dp"
+                            android:maxWidth="175dp"
+                            android:layout_marginTop="1dp"
                             android:singleLine="true"
                             android:ellipsize="end"
                             android:textColor="@drawable/pill_text_dim"
                             android:duplicateParentState="true"
+                            android:text="@string/music_player"
                             android:textSize="11sp"
                             android:fontFamily="@string/font_regular" />
+
+                        <ProgressBar
+                            android:id="@+id/nowPlayingProgress"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="3dp"
+                            android:layout_marginTop="5dp"
+                            android:layout_marginBottom="1dp"
+                            android:max="1000"
+                            android:progress="0"
+                            android:duplicateParentState="true"
+                            android:progressDrawable="@drawable/now_playing_progress"
+                            android:visibility="gone" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <!-- Divider -->
                 <View
                     android:layout_width="1dp"
-                    android:layout_height="22dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_marginEnd="8dp"
+                    android:layout_height="26dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="10dp"
                     android:background="#2EFFFFFF" />
 
                 <!-- Previous Button -->
                 <ImageView
                     android:id="@+id/btnNowPrev"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:padding="7dp"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:padding="8dp"
                     android:src="@drawable/ic_skip_previous"
                     android:tint="@drawable/pill_text"
                     android:background="@drawable/media_button_bg"
@@ -592,10 +630,10 @@
                 <!-- Play/Pause Button -->
                 <ImageView
                     android:id="@+id/btnNowPlayPause"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
                     android:layout_marginStart="6dp"
-                    android:padding="8dp"
+                    android:padding="9dp"
                     android:src="@drawable/ic_play"
                     android:tint="@drawable/pill_text"
                     android:background="@drawable/media_button_bg"
@@ -606,10 +644,10 @@
                 <!-- Next Button -->
                 <ImageView
                     android:id="@+id/btnNowNext"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
                     android:layout_marginStart="6dp"
-                    android:padding="7dp"
+                    android:padding="8dp"
                     android:src="@drawable/ic_skip_next"
                     android:tint="@drawable/pill_text"
                     android:background="@drawable/media_button_bg"

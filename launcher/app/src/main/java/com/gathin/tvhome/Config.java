@@ -625,6 +625,9 @@ final class Config {
         boolean wallpaperEnabled = json == null || bool(json, "wallpaper", true);
         if (!wallpaperEnabled) wallpaper = null;
         int rotationMinutes = json == null ? 0 : integer(json, "wallpaper_rotation_minutes", 0, 0, 1440);
+        if (choices.contains("wallpaper_rotation_minutes")) {
+            rotationMinutes = choices.getInt("wallpaper_rotation_minutes", rotationMinutes);
+        }
         int wallpaperDim = json == null ? 0 : integer(json, "wallpaper_dim", 0, 0, 90);
         int dockOpacity = json == null ? 100 : integer(json, "dock_opacity", 100, 30, 100);
         dockOpacity = chosenDockOpacity(choices.getInt(DOCK_OPACITY_KEY, -1), dockOpacity);
@@ -647,6 +650,17 @@ final class Config {
             wallpapers.addAll(chosen);
             wallpaper = chosen.isEmpty() ? null : chosen.get(0);
             wallpaperEnabled = !chosen.isEmpty();
+        }
+        if (choices.contains("dock_glass")) {
+            dockGlass = choices.getBoolean("dock_glass", dockGlass);
+        }
+        if (choices.contains("glow_effects")) {
+            boolean glow = choices.getBoolean("glow_effects", appGlow);
+            appGlow = glow;
+            ambientGlow = glow;
+        }
+        if (choices.contains("wifi_label_width")) {
+            wifiLabelWidth = choices.getInt("wifi_label_width", wifiLabelWidth);
         }
         // A festive skin comes only from a theme; config.xml has no festival.
         Festival festival = json == null ? Festival.NONE : Festival.parse(string(json, "festival", ""),
@@ -709,11 +723,14 @@ final class Config {
             SharedPreferences.Editor editor = choices.edit();
             if (!"absent".equals(token)) editor.remove("columns").remove("animations")
                     .remove("advanced_effects").remove(ROWS_BELOW_DOCK_KEY).remove(WALLPAPER_CHOICE_KEY)
-                    .remove(DOCK_OPACITY_KEY);
+                    .remove(DOCK_OPACITY_KEY).remove("wallpaper_rotation_minutes")
+                    .remove("dock_glass").remove("glow_effects").remove("wifi_label_width");
             editor.putString(THEME_SIGNATURE_KEY, signature).commit();
         } else if (!seen.equals(signature)) {
             choices.edit().remove("columns").remove("animations").remove("advanced_effects")
                     .remove(ROWS_BELOW_DOCK_KEY).remove(WALLPAPER_CHOICE_KEY).remove(DOCK_OPACITY_KEY)
+                    .remove("wallpaper_rotation_minutes").remove("dock_glass")
+                    .remove("glow_effects").remove("wifi_label_width")
                     .putString(THEME_SIGNATURE_KEY, signature).commit();
         }
     }

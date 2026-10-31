@@ -83,6 +83,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.PopupWindow;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -318,42 +319,86 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean appLibrarySelection;
     private boolean libraryOkOpens;
     private boolean libraryFocusPending;
+    private boolean tileLongPressTriggered;
     private RecyclerView.OnScrollListener pendingFocusScroll;
 
     private View nowPlayingPill;
     private View nowPlayingInfo;
+    private ImageView nowPlayingArt;
     private EqualizerView nowPlayingEqualizer;
     private TextView nowPlayingTitle;
     private TextView nowPlayingArtist;
+    private ProgressBar nowPlayingProgress;
     private ImageView btnNowPrev;
     private ImageView btnNowPlayPause;
     private ImageView btnNowNext;
     private NowPlayingManager.Callback nowPlayingCallback;
-
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    /** Refreshes the network pill when the connection changes: at boot Wi-Fi often connects after Home is shown. */
-    private final ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
+    private final Handler progressHandler = new Handler(Looper.getMainLooper());
+    private final Runnable progressRunnable = new Runnable() {
         @Override
-        public void onAvailable(@NonNull Network network) {
-            handler.post(MainActivity.this::updateWifiLabel);
-        }
-
-        @Override
-        public void onLost(@NonNull Network network) {
-            handler.post(MainActivity.this::updateWifiLabel);
-        }
-
-        /** wifi_status_warnings follows validation; signal-strength updates also land here, so skip those. */
-        private boolean lastValidated;
-
-        @Override
-        public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities caps) {
-            boolean validated = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
-            if (validated == lastValidated) return;
-            lastValidated = validated;
-            if (wifiNoInternetTint != null) handler.post(MainActivity.this::updateWifiLabel);
+        public void run() {
+            updateNowPlayingProgress();
+            progressHandler.postDelayed(this, 1000);
         }
     };
+
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private WifiInfo lastWifiInfo;
+    /** Refreshes the network pill when the connection changes: at boot Wi-Fi often connects after Home is shown. */
+    private ConnectivityManager.NetworkCallback createNetworkCallback() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return new ConnectivityManager.NetworkCallback(ConnectivityManager.NetworkCallback.FLAG_INCLUDE_LOCATION_INFO) {
+                @Override
+                public void onAvailable(@NonNull Network network) {
+                    handler.post(MainActivity.this::updateWifiLabel);
+                }
+
+                @Override
+                public void onLost(@NonNull Network network) {
+                    lastWifiInfo = null;
+                    handler.post(MainActivity.this::updateWifiLabel);
+                }
+
+                private boolean lastValidated;
+
+                @Override
+                public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities caps) {
+                    if (caps.getTransportInfo() instanceof WifiInfo) {
+                        lastWifiInfo = (WifiInfo) caps.getTransportInfo();
+                    }
+                    boolean validated = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+                    lastValidated = validated;
+                    handler.post(MainActivity.this::updateWifiLabel);
+                }
+            };
+        }
+        return new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(@NonNull Network network) {
+                handler.post(MainActivity.this::updateWifiLabel);
+            }
+
+            @Override
+            public void onLost(@NonNull Network network) {
+                lastWifiInfo = null;
+                handler.post(MainActivity.this::updateWifiLabel);
+            }
+
+            private boolean lastValidated;
+
+            @Override
+            public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities caps) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && caps.getTransportInfo() instanceof WifiInfo) {
+                    lastWifiInfo = (WifiInfo) caps.getTransportInfo();
+                }
+                boolean validated = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+                if (validated == lastValidated) return;
+                lastValidated = validated;
+                if (wifiNoInternetTint != null) handler.post(MainActivity.this::updateWifiLabel);
+            }
+        };
+    }
+    private final ConnectivityManager.NetworkCallback networkCallback = createNetworkCallback();
     /** Shows the Inputs pill once the TV registers an input: at boot HDMI inputs can appear after Home is shown. */
     private final TvInputManager.TvInputCallback inputCallback = new TvInputManager.TvInputCallback() {
         @Override
@@ -771,16 +816,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             });
         }
         launcherSettingsButton = cfg.launcherSettingsButton;
-        if (launcherSettingsButton) {
-            ((TextView) btnSettings).setText(R.string.launcher_settings);
-            ((TextView) btnSettings).setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_home_settings_pill, 0, 0, 0);
-        }
-        btnSettings.setOnClickListener(v -> {
-            if (launcherSettingsButton) startActivityForResult(
-                    new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST);
-            else open(settingsKeyPanel ? new Intent(this, QuickSettingsActivity.class)
-                    : systemIntent(Settings.ACTION_SETTINGS));
-        });
+        ((TextView) btnSettings).setText(R.string.settings);
+        ((TextView) btnSettings).setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_settings, 0, 0, 0);
+        btnSettings.setOnClickListener(v -> showSettingsMenu());
         btnReorder = findViewById(R.id.btnReorder);
         btnReorder.setOnClickListener(v -> toggleReorder());
         btnReorder.setVisibility(cfg.reorderButton ? View.VISIBLE : View.GONE);
@@ -865,8 +903,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (keyCode == KeyEvent.KEYCODE_DPAD_UP) return true;
             if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
                 if (nowPlayingPill != null && nowPlayingPill.getVisibility() == View.VISIBLE) {
-                    btnNowPlayPause.requestFocus();
-                    return true;
+                    if (v == btnSettings || (btnProfile != null && v == btnProfile)) {
+                        btnNowPlayPause.requestFocus();
+                        return true;
+                    }
                 }
                 // Back to the dock tile Up came from, not wherever the focus finder lands.
                 focusTile(singleRow ? lastFocused : lastFocused % COLUMNS);
@@ -903,12 +943,24 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
         nowPlayingPill = findViewById(R.id.nowPlayingPill);
         nowPlayingInfo = findViewById(R.id.nowPlayingInfo);
+        nowPlayingArt = findViewById(R.id.nowPlayingArt);
         nowPlayingEqualizer = findViewById(R.id.nowPlayingEqualizer);
         nowPlayingTitle = findViewById(R.id.nowPlayingTitle);
         nowPlayingArtist = findViewById(R.id.nowPlayingArtist);
+        nowPlayingProgress = findViewById(R.id.nowPlayingProgress);
         btnNowPrev = findViewById(R.id.btnNowPrev);
         btnNowPlayPause = findViewById(R.id.btnNowPlayPause);
         btnNowNext = findViewById(R.id.btnNowNext);
+
+        if (nowPlayingArt != null) {
+            nowPlayingArt.setClipToOutline(true);
+            nowPlayingArt.setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), 10 * density);
+                }
+            });
+        }
 
         if (nowPlayingPill != null) {
             NowPlayingManager.get().init(this);
@@ -920,11 +972,18 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             View.OnKeyListener nowPlayingKey = (v, keyCode, event) -> {
                 if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
                 if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-                    firstTopButton().requestFocus();
+                    if (btnSettings != null && btnSettings.getVisibility() == View.VISIBLE) {
+                        btnSettings.requestFocus();
+                    } else if (btnProfile != null && btnProfile.getVisibility() == View.VISIBLE) {
+                        btnProfile.requestFocus();
+                    } else {
+                        firstTopButton().requestFocus();
+                    }
                     return true;
                 }
                 if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-                    focusTile(singleRow ? lastFocused : lastFocused % COLUMNS);
+                    int rightDockTile = Math.min(COLUMNS - 1, adapter.dockFilled() > 0 ? adapter.dockFilled() - 1 : 0);
+                    focusTile(singleRow ? lastFocused : (lastFocused >= 0 ? lastFocused % COLUMNS : rightDockTile));
                     return true;
                 }
                 if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
@@ -958,16 +1017,68 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             }
 
             nowPlayingCallback = state -> {
-                if (state != null && state.hasActiveSession && (!state.title.isEmpty() || state.isPlaying)) {
-                    nowPlayingPill.setVisibility(View.VISIBLE);
+                nowPlayingPill.setVisibility(View.VISIBLE);
+                boolean hasActive = state != null && state.hasActiveSession && !state.title.isEmpty();
+                if (hasActive) {
                     nowPlayingTitle.setText(state.title);
-                    nowPlayingArtist.setText(state.artist);
-                    nowPlayingEqualizer.setPlaying(state.isPlaying);
+                    String sub = state.artist;
+                    if (sub == null || sub.isEmpty()) sub = state.album;
+                    nowPlayingArtist.setText(sub != null ? sub : "");
+                    if (nowPlayingEqualizer != null) {
+                        nowPlayingEqualizer.setVisibility(state.isPlaying ? View.VISIBLE : View.GONE);
+                        nowPlayingEqualizer.setPlaying(state.isPlaying);
+                    }
                     btnNowPlayPause.setImageResource(state.isPlaying ? R.drawable.ic_pause : R.drawable.ic_play);
                     btnNowPlayPause.setContentDescription(getString(state.isPlaying ? R.string.pause : R.string.play));
+
+                    if (nowPlayingArt != null) {
+                        if (state.albumArt != null) {
+                            nowPlayingArt.setImageBitmap(state.albumArt);
+                            nowPlayingArt.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                            nowPlayingArt.setPadding(0, 0, 0, 0);
+                            nowPlayingArt.setBackground(null);
+                        } else {
+                            nowPlayingArt.setImageResource(R.drawable.ic_audio_output);
+                            nowPlayingArt.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+                            int p = (int) (10 * density);
+                            nowPlayingArt.setPadding(p, p, p, p);
+                            nowPlayingArt.setBackgroundResource(R.drawable.now_playing_art_bg);
+                        }
+                    }
+
+                    if (nowPlayingProgress != null) {
+                        if (state.isPlaying && state.duration > 0) {
+                            nowPlayingProgress.setVisibility(View.VISIBLE);
+                            nowPlayingProgress.setMax((int) state.duration);
+                            nowPlayingProgress.setProgress((int) Math.min(state.getCurrentPosition(), state.duration));
+                            progressHandler.removeCallbacks(progressRunnable);
+                            progressHandler.postDelayed(progressRunnable, 1000);
+                        } else {
+                            nowPlayingProgress.setVisibility(View.GONE);
+                            progressHandler.removeCallbacks(progressRunnable);
+                        }
+                    }
                 } else {
-                    nowPlayingPill.setVisibility(View.GONE);
-                    nowPlayingEqualizer.setPlaying(false);
+                    // Idle state: Always visible on Home screen
+                    nowPlayingTitle.setText(R.string.not_playing);
+                    nowPlayingArtist.setText(R.string.music_player);
+                    if (nowPlayingEqualizer != null) {
+                        nowPlayingEqualizer.setVisibility(View.GONE);
+                        nowPlayingEqualizer.setPlaying(false);
+                    }
+                    btnNowPlayPause.setImageResource(R.drawable.ic_play);
+                    btnNowPlayPause.setContentDescription(getString(R.string.play));
+                    if (nowPlayingArt != null) {
+                        nowPlayingArt.setImageResource(R.drawable.ic_audio_output);
+                        nowPlayingArt.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+                        int p = (int) (10 * density);
+                        nowPlayingArt.setPadding(p, p, p, p);
+                        nowPlayingArt.setBackgroundResource(R.drawable.now_playing_art_bg);
+                    }
+                    if (nowPlayingProgress != null) {
+                        nowPlayingProgress.setVisibility(View.GONE);
+                    }
+                    progressHandler.removeCallbacks(progressRunnable);
                 }
             };
             NowPlayingManager.get().registerCallback(nowPlayingCallback);
@@ -1089,6 +1200,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
     }
 
+    private void updateNowPlayingProgress() {
+        NowPlayingManager.NowPlayingState state = NowPlayingManager.get().getCurrentState();
+        if (state != null && state.isPlaying && state.duration > 0 && nowPlayingProgress != null) {
+            long cur = state.getCurrentPosition();
+            nowPlayingProgress.setMax((int) state.duration);
+            nowPlayingProgress.setProgress((int) Math.min(cur, state.duration));
+        }
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
@@ -1163,6 +1283,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             }
         }
         NowPlayingManager.get().refreshSessions();
+        updateNowPlayingProgress();
     }
 
     /** Launcher settings' change count (Config.SETTINGS_REVISION_KEY); onResume rebuilds Home when it moved. */
@@ -1332,6 +1453,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         stopStats();
         if (diya != null) diya.stop();
         if (nowPlayingEqualizer != null) nowPlayingEqualizer.setPlaying(false);
+        progressHandler.removeCallbacks(progressRunnable);
         cancelPendingFocusScroll();
         // Nothing of ours stays on screen over another app; an undecided prompt simply returns next time.
         if (cardPrompt != null) cardPrompt.dismiss();
@@ -1394,6 +1516,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             cm.unregisterNetworkCallback(vpnCallback);
         }
         if (nowPlayingCallback != null) NowPlayingManager.get().unregisterCallback(nowPlayingCallback);
+        progressHandler.removeCallbacks(progressRunnable);
         if (bluetoothReceiver != null) {
             try { unregisterReceiver(bluetoothReceiver); } catch (Throwable ignored) {}
             bluetoothReceiver = null;
@@ -1475,15 +1598,42 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             }
         }
         if (handleSettingsKey(event)) return true;
-        if (tileMenuEnabled && !reordering && openPopup == null && cardPrompt == null
-                && event.getKeyCode() == KeyEvent.KEYCODE_MENU) {
-            int position = focusedTilePosition();
-            if (position >= 0 && position < adapter.appCount()
-                    && !getPackageName().equals(adapter.packageAt(position))) {
-                if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
-                    onTileLongPress(position, getCurrentFocus());
+        if (tileMenuEnabled && !reordering && openPopup == null && cardPrompt == null) {
+            int code = event.getKeyCode();
+            boolean isOk = (code == KeyEvent.KEYCODE_DPAD_CENTER || code == KeyEvent.KEYCODE_ENTER
+                    || code == KeyEvent.KEYCODE_NUMPAD_ENTER);
+            if (code == KeyEvent.KEYCODE_MENU) {
+                int position = focusedTilePosition();
+                if (position >= 0 && position < adapter.appCount()
+                        && !getPackageName().equals(adapter.packageAt(position))) {
+                    if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
+                        onTileLongPress(position, getCurrentFocus());
+                    }
+                    return true;
                 }
-                return true;
+            } else if (isOk) {
+                if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                    if (event.getRepeatCount() == 0) {
+                        tileLongPressTriggered = false;
+                        event.startTracking();
+                    } else if (event.isLongPress() || (event.getFlags() & KeyEvent.FLAG_LONG_PRESS) != 0) {
+                        int position = focusedTilePosition();
+                        if (position >= 0 && position < adapter.appCount()
+                                && !getPackageName().equals(adapter.packageAt(position))) {
+                            View focus = getCurrentFocus();
+                            if (focus != null) {
+                                tileLongPressTriggered = true;
+                                onTileLongPress(position, focus);
+                                return true;
+                            }
+                        }
+                    }
+                } else if (event.getAction() == KeyEvent.ACTION_UP) {
+                    if (tileLongPressTriggered) {
+                        tileLongPressTriggered = false;
+                        return true;
+                    }
+                }
             }
         }
         if (!reordering) return super.dispatchKeyEvent(event);
@@ -1537,6 +1687,25 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         View f = getCurrentFocus();
         if (f == null || f.getId() != R.id.card || !(f.getParent() instanceof View)) return -1;
         return grid.getChildAdapterPosition((View) f.getParent());
+    }
+
+    @Override
+    public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER
+                || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+            if (tileMenuEnabled && !reordering && openPopup == null && cardPrompt == null) {
+                int position = focusedTilePosition();
+                if (position >= 0 && position < adapter.appCount()
+                        && !getPackageName().equals(adapter.packageAt(position))) {
+                    View focus = getCurrentFocus();
+                    if (focus != null) {
+                        onTileLongPress(position, focus);
+                        return true;
+                    }
+                }
+            }
+        }
+        return super.onKeyLongPress(keyCode, event);
     }
 
     /** The reorder button: turns the mode on (focus goes back to the last tile), or off again. */
@@ -1665,6 +1834,54 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         endReorder();
         refocusAfterLayout(slot);
+    }
+
+    public List<String> getDockLabels() {
+        List<String> labels = new ArrayList<>();
+        int count = Math.min(COLUMNS, adapter.movableCount());
+        for (int i = 0; i < count; i++) {
+            String l = adapter.labelAt(i);
+            labels.add(l == null || l.isEmpty() ? "Slot " + (i + 1) : l);
+        }
+        return labels;
+    }
+
+    public void replaceDockSlot(int slot, ResolveInfo app) {
+        if (slot < 0 || slot >= COLUMNS || app == null || app.activityInfo == null) return;
+        String newPkg = app.activityInfo.packageName;
+        String newKey = new ComponentName(newPkg, app.activityInfo.name).flattenToShortString();
+        String oldLabel = slot < adapter.movableCount() ? adapter.labelAt(slot) : "";
+        String newLabel = Cards.cleanLabel(String.valueOf(app.loadLabel(getPackageManager())), newPkg);
+
+        LibraryApps.save(this, newPkg, true);
+
+        List<String> keys = new ArrayList<>(adapter.movableKeys());
+        while (keys.size() <= slot && slot < adapter.movableCount()) {
+            keys.add(adapter.keyAt(keys.size()));
+        }
+
+        int existingPos = keys.indexOf(newKey);
+        if (existingPos >= 0) {
+            keys.remove(existingPos);
+        }
+
+        if (slot < keys.size()) {
+            String replacedKey = keys.set(slot, newKey);
+            if (replacedKey != null && !replacedKey.equals(newKey) && !keys.contains(replacedKey)) {
+                keys.add(replacedKey);
+            }
+        } else {
+            keys.add(newKey);
+        }
+
+        int dockedCount = Math.max(COLUMNS, Math.min(keys.size(), COLUMNS));
+        Order newOrder = new Order(Order.dockKey(dockApps), keys, dockedCount);
+        if (Order.save(Order.file(this), newOrder)) {
+            adapter.setSavedOrder(Order.ranks(newOrder, dockApps), Order.docked(newOrder, dockApps));
+        }
+
+        reloadApps(false);
+        Toast.makeText(this, getString(R.string.dock_app_replaced, newLabel, oldLabel), Toast.LENGTH_SHORT).show();
     }
 
     private void pickUp(int pos) {
@@ -2468,9 +2685,18 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         int count = adapter.appCount();
         int target;
         if (singleRow) {
-            // One row: Up leaves for the top bar, Down has nowhere to go, and Left/Right walk the whole row,
+            // One row: Up leaves for the top bar or Now Playing, Down has nowhere to go, and Left/Right walk the whole row,
             // stopping at its two ends (the default focus search scrolls the row to the next tile).
-            if (keyCode == KeyEvent.KEYCODE_DPAD_UP) return false;
+            if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+                if (nowPlayingPill != null && nowPlayingPill.getVisibility() == View.VISIBLE) {
+                    if (position >= 2) {
+                        btnNowPlayPause.requestFocus();
+                        return true;
+                    }
+                }
+                firstTopButton().requestFocus();
+                return true;
+            }
             if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) return true;
             boolean forward = rtlAppGrid ? keyCode == KeyEvent.KEYCODE_DPAD_LEFT : keyCode == KeyEvent.KEYCODE_DPAD_RIGHT;
             int last = adapter.focusablePosition(count - 1);
@@ -2496,10 +2722,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
             if (position < COLUMNS) {
                 if (nowPlayingPill != null && nowPlayingPill.getVisibility() == View.VISIBLE) {
-                    btnNowPlayPause.requestFocus();
-                    return true;
+                    if (position >= COLUMNS - 2 || position == adapter.dockFilled() - 1) {
+                        btnNowPlayPause.requestFocus();
+                        return true;
+                    }
                 }
-                return false;          // dock row: let focus move to the top bar
+                firstTopButton().requestFocus();
+                return true;          // dock row: move focus to the top bar
             }
             target = position - COLUMNS;
         } else {
@@ -2862,6 +3091,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         try {
             ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
             boolean wifi = false, ethernet = false;
+            WifiInfo capsWifiInfo = null;
             // All networks, not just the active one: with a VPN up the active network is the VPN itself.
             for (Network net : cm != null ? cm.getAllNetworks() : new Network[0]) {
                 NetworkCapabilities caps = cm.getNetworkCapabilities(net);
@@ -2875,7 +3105,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 // Android reached the internet through it; a captive portal stays unvalidated until login.
                 if (caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) validated = true;
                 if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) ethernet = true;
-                if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) wifi = true;
+                if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                    wifi = true;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && caps.getTransportInfo() instanceof WifiInfo) {
+                        capsWifiInfo = (WifiInfo) caps.getTransportInfo();
+                    }
+                }
             }
             if (!online) {
                 text = getString(R.string.offline);
@@ -2887,7 +3122,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 steady = true;
             } else if (wifi) {
                 WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-                WifiInfo info = wm != null ? wm.getConnectionInfo() : null;
+                WifiInfo info = lastWifiInfo != null ? lastWifiInfo : (capsWifiInfo != null ? capsWifiInfo : (wm != null ? wm.getConnectionInfo() : null));
                 String ssid = info != null ? info.getSSID() : null;
                 flame = info != null ? Math.max(1, Math.min(4, WifiManager.calculateSignalLevel(info.getRssi(), 5))) : 3;
                 if (ssid != null) {
@@ -3675,7 +3910,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
         LinearLayout rows = panel.findViewById(R.id.rows);
         PopupWindow popup = glassPopup(panel, (int) (200 * density));
-        if (!launcherSettingsButton) addSettingsMenuRow(rows, popup, R.string.launcher_settings, () -> startActivityForResult(
+        addSettingsMenuRow(rows, popup, R.string.tv_settings, () -> open(systemIntent(Settings.ACTION_SETTINGS)));
+        addSettingsMenuRow(rows, popup, R.string.launcher_settings, () -> startActivityForResult(
                 new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));
         // Firmware that ships its own settings app next to the AOSP one (Xiaomi China is one): the
         // vendor app holds pages the AOSP settings has no row for, such as Account & Security with
@@ -3714,12 +3950,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
         LinearLayout rows = panel.findViewById(R.id.rows);
         PopupWindow popup = glassPopup(panel, (int) (200 * density));
-        if (dockRow && position < adapter.movableCount()) {
-            boolean inDock = position < COLUMNS;
-            addSettingsMenuRow(rows, popup, inDock ? R.string.tile_replace_in_dock : R.string.tile_add_to_dock,
-                    () -> startDockEditFor(key, inDock));
-        }
-        if (position < adapter.movableCount()) addSettingsMenuRow(rows, popup, R.string.tile_move, () -> {
+        if (position < adapter.movableCount()) addSettingsMenuRow(rows, popup, R.string.tile_reorder, () -> {
             if (!beginReorder()) return;
             int at = adapter.positionOf(key);   // beginReorder can rebuild the tiles
             if (at < 0) return;
@@ -3727,6 +3958,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             pickUp(at);
             Toast.makeText(this, R.string.reorder_hint, Toast.LENGTH_LONG).show();
         });
+        if (dockRow && position < adapter.movableCount()) {
+            boolean inDock = position < COLUMNS;
+            addSettingsMenuRow(rows, popup, inDock ? R.string.tile_replace_in_dock : R.string.tile_add_to_dock,
+                    () -> startDockEditFor(key, inDock));
+        }
         if (appLibraryEnabled) addSettingsMenuRow(rows, popup, R.string.library_remove_shortcut, () -> {
             if (LibraryApps.save(this, pkg, false)) reloadApps(false);
             else Toast.makeText(this, R.string.library_save_failed, Toast.LENGTH_LONG).show();

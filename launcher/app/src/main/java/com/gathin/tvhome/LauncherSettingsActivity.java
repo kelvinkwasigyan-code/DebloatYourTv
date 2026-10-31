@@ -33,6 +33,10 @@ public final class LauncherSettingsActivity extends Activity {
     private static final int[] DOCK_OPACITIES = {100, 70, 50, 30};
     private final TextView[] dockChoices = new TextView[DOCK_OPACITIES.length];
     private TextView wallpaperChoice;
+    private TextView wallpaperRotationChoice;
+    private TextView dockGlassChoice;
+    private TextView glowChoice;
+    private TextView wifiLabelChoice;
     private TextView animationsChoice;
     private TextView advancedChoice;
     private TextView followThemeChoice;
@@ -42,6 +46,10 @@ public final class LauncherSettingsActivity extends Activity {
     private int dockOpacity;
     private boolean animations;
     private boolean advancedEffects;
+    private boolean dockGlass;
+    private boolean glowEffects;
+    private int wallpaperRotationMinutes;
+    private int wifiLabelWidth;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -60,6 +68,10 @@ public final class LauncherSettingsActivity extends Activity {
         dockOpacity = config.dockOpacity;
         animations = config.animations;
         advancedEffects = config.animations && config.advancedEffects;
+        dockGlass = config.dockGlass;
+        glowEffects = config.appGlow;
+        wallpaperRotationMinutes = config.wallpaperRotationMinutes;
+        wifiLabelWidth = config.wifiLabelWidth;
 
         int[] ids = {R.id.columns4, R.id.columns5, R.id.columns6, R.id.columns7};
         for (int i = 0; i < ids.length; i++) {
@@ -106,8 +118,37 @@ public final class LauncherSettingsActivity extends Activity {
             reverseRow(rowChoices);
             reverseRow(dockChoices);
         }
+
+        dockGlassChoice = findViewById(R.id.dockGlassChoice);
+        dockGlassChoice.setOnClickListener(v -> {
+            dockGlass = !dockGlass;
+            choices.edit().putBoolean("dock_glass", dockGlass).apply();
+            changed();
+            refresh();
+        });
+
+        glowChoice = findViewById(R.id.glowChoice);
+        glowChoice.setOnClickListener(v -> {
+            glowEffects = !glowEffects;
+            choices.edit().putBoolean("glow_effects", glowEffects).apply();
+            changed();
+            refresh();
+        });
+
         wallpaperChoice = findViewById(R.id.wallpaperChoice);
         wallpaperChoice.setOnClickListener(v -> showWallpaperPicker());
+
+        wallpaperRotationChoice = findViewById(R.id.wallpaperRotationChoice);
+        wallpaperRotationChoice.setOnClickListener(v -> showWallpaperRotationPicker());
+
+        wifiLabelChoice = findViewById(R.id.wifiLabelChoice);
+        wifiLabelChoice.setOnClickListener(v -> {
+            wifiLabelWidth = wifiLabelWidth > 0 ? 0 : 180;
+            choices.edit().putInt("wifi_label_width", wifiLabelWidth).apply();
+            changed();
+            refresh();
+        });
+
         animationsChoice = findViewById(R.id.animationsChoice);
         animationsChoice.setOnClickListener(v -> {
             animations = !animations;
@@ -140,13 +181,19 @@ public final class LauncherSettingsActivity extends Activity {
             if (!hasOnTvChoices()) return;
             choices.edit().remove("columns").remove(Config.ROWS_BELOW_DOCK_KEY).remove("animations")
                     .remove("advanced_effects").remove(Config.WALLPAPER_CHOICE_KEY)
-                    .remove(Config.DOCK_OPACITY_KEY).remove(OpenOnStart.KEY).commit();
+                    .remove(Config.DOCK_OPACITY_KEY).remove(OpenOnStart.KEY)
+                    .remove("wallpaper_rotation_minutes").remove("dock_glass")
+                    .remove("glow_effects").remove("wifi_label_width").commit();
             Config current = Config.load(this);
             columns = current.columns;
             rowsBelowDock = current.rowsBelowDock;
             dockOpacity = current.dockOpacity;
             animations = current.animations;
             advancedEffects = current.animations && current.advancedEffects;
+            dockGlass = current.dockGlass;
+            glowEffects = current.appGlow;
+            wallpaperRotationMinutes = current.wallpaperRotationMinutes;
+            wifiLabelWidth = current.wifiLabelWidth;
             changed();
             refresh();
         });
@@ -196,6 +243,40 @@ public final class LauncherSettingsActivity extends Activity {
                 })
                 .setNeutralButton(R.string.wallpaper_theme_default, (dialog, which) -> {
                     choices.edit().remove(Config.WALLPAPER_CHOICE_KEY).apply();
+                    changed();
+                    refresh();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void showWallpaperRotationPicker() {
+        String[] labels = {
+                getString(R.string.off),
+                getString(R.string.rotation_5m),
+                getString(R.string.rotation_15m),
+                getString(R.string.rotation_30m),
+                getString(R.string.rotation_60m)
+        };
+        int[] minutes = {0, 5, 15, 30, 60};
+        int checked = 0;
+        int current = choices.getInt("wallpaper_rotation_minutes", wallpaperRotationMinutes);
+        for (int i = 0; i < minutes.length; i++) {
+            if (minutes[i] == current) checked = i;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.wallpaper_rotation_label)
+                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
+                    dialog.dismiss();
+                    wallpaperRotationMinutes = minutes[which];
+                    choices.edit().putInt("wallpaper_rotation_minutes", minutes[which]).apply();
+                    changed();
+                    refresh();
+                })
+                .setNeutralButton(R.string.wallpaper_theme_default, (dialog, which) -> {
+                    choices.edit().remove("wallpaper_rotation_minutes").apply();
+                    Config cfg = Config.load(this);
+                    wallpaperRotationMinutes = cfg.wallpaperRotationMinutes;
                     changed();
                     refresh();
                 })
@@ -286,6 +367,20 @@ public final class LauncherSettingsActivity extends Activity {
         for (int i = 0; i < dockChoices.length; i++) {
             dockChoices[i].setSelected(dockOpacity == DOCK_OPACITIES[i]);
         }
+        dockGlassChoice.setText(getString(R.string.dock_glass_state,
+                getString(dockGlass ? R.string.on : R.string.off)));
+        glowChoice.setText(getString(R.string.glow_effects_state,
+                getString(glowEffects ? R.string.on : R.string.off)));
+        int rotationVal = choices.getInt("wallpaper_rotation_minutes", wallpaperRotationMinutes);
+        String rotationStr = rotationVal == 0 ? getString(R.string.off)
+                : rotationVal == 5 ? getString(R.string.rotation_5m)
+                : rotationVal == 15 ? getString(R.string.rotation_15m)
+                : rotationVal == 30 ? getString(R.string.rotation_30m)
+                : rotationVal == 60 ? getString(R.string.rotation_60m)
+                : rotationVal + " min";
+        wallpaperRotationChoice.setText(getString(R.string.wallpaper_rotation_state, rotationStr));
+        wifiLabelChoice.setText(getString(R.string.wifi_label_state,
+                wifiLabelWidth > 0 ? getString(R.string.wifi_label_name) : getString(R.string.wifi_label_icon)));
         animationsChoice.setText(getString(R.string.animations_state,
                 getString(animations ? R.string.on : R.string.off)));
         advancedChoice.setText(getString(R.string.advanced_effects_state,
@@ -305,7 +400,9 @@ public final class LauncherSettingsActivity extends Activity {
         return choices.contains("columns") || choices.contains(Config.ROWS_BELOW_DOCK_KEY)
                 || choices.contains("animations") || choices.contains("advanced_effects")
                 || choices.contains(Config.WALLPAPER_CHOICE_KEY) || choices.contains(Config.DOCK_OPACITY_KEY)
-                || choices.contains(OpenOnStart.KEY);
+                || choices.contains(OpenOnStart.KEY) || choices.contains("wallpaper_rotation_minutes")
+                || choices.contains("dock_glass") || choices.contains("glow_effects")
+                || choices.contains("wifi_label_width");
     }
 
     private void open(Intent intent) {

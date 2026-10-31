@@ -268,7 +268,7 @@
     <bool name="top_menu">false</bool>
     <!-- A direct Launcher settings action instead of TV Settings in the header (or top_menu).
          Off by default; a theme can set "launcher_settings_button": true. -->
-    <bool name="launcher_settings_button">false</bool>
+    <bool name="launcher_settings_button">true</bool>
     <!-- The dock band as light frosted glass, like the Inputs, Wi-Fi and Settings pills, so a sky or wallpaper shows
          through it. false (the default) keeps the solid near-black band, or the cinematic shelf's dark glass. Can
          also be set with "dock_glass": true in a theme's config.json. -->
@@ -313,7 +313,7 @@
     <bool name="show_library_pill">true</bool>
     <!-- With icon_only_buttons: keep the network name on the Wi-Fi pill up to this width in dp, cut with an ellipsis.
          0 leaves the Wi-Fi pill as an icon. -->
-    <integer name="wifi_label_width">0</integer>
+    <integer name="wifi_label_width">180</integer>
 
     <!-- The Wi-Fi/Ethernet pill in the top bar. false hides it (on Android 14 with Location off it can
          only say "Wi-Fi", not the network name). Can also be set with "show_network_pill" in a theme. -->
@@ -342,10 +342,10 @@
          group falls back to the whole collection; empty rotates through every picture. A theme can set
          "wallpaper_moods" as an object. -->
     <string name="wallpaper_moods" translatable="false">{&quot;morning&quot;:[&quot;001.jpg&quot;,&quot;002.jpg&quot;,&quot;003.jpg&quot;,&quot;004.jpg&quot;,&quot;005.jpg&quot;,&quot;006.jpg&quot;,&quot;007.jpg&quot;],&quot;evening&quot;:[&quot;008_night_tokyo.jpg&quot;,&quot;009_night_hongkong.jpg&quot;,&quot;010_night_manhattan.jpg&quot;,&quot;011_night_dubai.jpg&quot;],&quot;night&quot;:[&quot;008_night_tokyo.jpg&quot;,&quot;009_night_hongkong.jpg&quot;,&quot;010_night_manhattan.jpg&quot;,&quot;011_night_dubai.jpg&quot;]}</string>
-    <!-- Hold OK on a tile opens a small menu: Move (picks the tile up for reordering), Remove from Home (only with
-         app_library) and App info. false keeps the old behaviour: holding OK opens the app's App info page.
+    <!-- Hold OK on a tile opens a small menu: Reorder (picks the tile up for reordering), Replace with another app,
+         Remove from Home (only with app_library) and App info. false keeps the old behaviour: holding OK opens the app's App info page.
          Can also be set with "tile_menu": true in a theme's config.json. -->
-    <bool name="tile_menu">false</bool>
+    <bool name="tile_menu">true</bool>
 
     <!-- Grid rows left visible under the dock on the home screen. 0 = dock sits at the very bottom. Tiles shrink if
          the dock, its title and this many rows would not otherwise fit the screen height. -->

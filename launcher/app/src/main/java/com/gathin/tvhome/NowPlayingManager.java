@@ -39,6 +39,22 @@ public class NowPlayingManager {
         public String packageName = "";
         public Bitmap albumArt = null;
         public PendingIntent sessionActivity = null;
+        public long duration = 0;
+        public long position = 0;
+        public float playbackSpeed = 1f;
+        public long lastPositionUpdateTime = 0;
+
+        public long getCurrentPosition() {
+            if (!isPlaying || playbackSpeed <= 0) {
+                return position;
+            }
+            long timeDelta = SystemClock.elapsedRealtime() - lastPositionUpdateTime;
+            long estimated = position + (long) (timeDelta * playbackSpeed);
+            if (duration > 0 && estimated > duration) {
+                return duration;
+            }
+            return Math.max(0, estimated);
+        }
     }
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -53,6 +69,10 @@ public class NowPlayingManager {
             sInstance = new NowPlayingManager();
         }
         return sInstance;
+    }
+
+    public NowPlayingState getCurrentState() {
+        return currentState;
     }
 
     public void init(Context context) {
@@ -193,6 +213,7 @@ public class NowPlayingManager {
         String artist = "";
         String album = "";
         Bitmap art = null;
+        long duration = 0;
 
         if (meta != null) {
             title = meta.getString(MediaMetadata.METADATA_KEY_TITLE);
@@ -211,6 +232,7 @@ public class NowPlayingManager {
             if (art == null) {
                 art = meta.getBitmap(MediaMetadata.METADATA_KEY_ART);
             }
+            duration = meta.getLong(MediaMetadata.METADATA_KEY_DURATION);
         }
 
         if ((title == null || title.isEmpty()) && activeController.getQueueTitle() != null) {
@@ -227,6 +249,15 @@ public class NowPlayingManager {
             return;
         }
 
+        long position = 0;
+        float speed = 1f;
+        long updateTime = 0;
+        if (state != null) {
+            position = state.getPosition();
+            speed = state.getPlaybackSpeed();
+            updateTime = state.getLastPositionUpdateTime();
+        }
+
         currentState.hasActiveSession = true;
         currentState.isPlaying = playing;
         currentState.title = title;
@@ -235,6 +266,10 @@ public class NowPlayingManager {
         currentState.albumArt = art;
         currentState.packageName = activeController.getPackageName();
         currentState.sessionActivity = activeController.getSessionActivity();
+        currentState.duration = Math.max(0, duration);
+        currentState.position = Math.max(0, position);
+        currentState.playbackSpeed = speed > 0 ? speed : 1f;
+        currentState.lastPositionUpdateTime = updateTime > 0 ? updateTime : SystemClock.elapsedRealtime();
 
         notifyCallbacks();
     }
@@ -248,6 +283,10 @@ public class NowPlayingManager {
         currentState.albumArt = null;
         currentState.sessionActivity = null;
         currentState.packageName = "";
+        currentState.duration = 0;
+        currentState.position = 0;
+        currentState.playbackSpeed = 1f;
+        currentState.lastPositionUpdateTime = 0;
         notifyCallbacks();
     }
 
@@ -276,6 +315,12 @@ public class NowPlayingManager {
     }
 
     public void togglePlayPause() {
+        if (!currentState.hasActiveSession) {
+            if (appContext != null) {
+                openMusicApp(appContext);
+            }
+            return;
+        }
         if (currentState.isPlaying) {
             pause();
         } else {
@@ -302,6 +347,8 @@ public class NowPlayingManager {
     }
 
     public void openMusicApp(Context context) {
+        if (context == null) context = appContext;
+        if (context == null) return;
         if (currentState.sessionActivity != null) {
             try {
                 currentState.sessionActivity.send();
@@ -315,10 +362,38 @@ public class NowPlayingManager {
             }
             if (intent != null) {
                 try {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     context.startActivity(intent);
+                    return;
                 } catch (Exception ignored) {}
             }
         }
+        String[] fallbackPkgs = new String[]{
+                "com.spotify.tv.android",
+                "com.google.android.youtube.tvmusic",
+                "com.spotify.music",
+                "com.google.android.apps.youtube.music",
+                "com.amazon.mp3.tv",
+                "com.apple.android.music"
+        };
+        for (String pkg : fallbackPkgs) {
+            Intent intent = context.getPackageManager().getLeanbackLaunchIntentForPackage(pkg);
+            if (intent == null) {
+                intent = context.getPackageManager().getLaunchIntentForPackage(pkg);
+            }
+            if (intent != null) {
+                try {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(intent);
+                    return;
+                } catch (Exception ignored) {}
+            }
+        }
+        try {
+            Intent musicIntent = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MUSIC);
+            musicIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(musicIntent);
+        } catch (Exception ignored) {}
     }
 
     private void sendMediaKey(int keyCode) {
