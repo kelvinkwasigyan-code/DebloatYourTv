@@ -246,35 +246,257 @@
             android:clipChildren="false"
             android:clipToPadding="false">
 
+            <!-- Now Playing pill: top-left corner, displaying album art, equalizer, song info, progress, and transport controls -->
             <LinearLayout
-                android:id="@+id/leftBlock"
-                android:layout_width="match_parent"
+                android:id="@+id/nowPlayingPill"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
-                android:layout_toStartOf="@+id/topButtons"
-                android:layout_marginEnd="16dp"
+                android:layout_alignParentTop="true"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/now_playing_bg"
+                android:paddingStart="8dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:visibility="visible">
+
+                <!-- Track info area: focusable/clickable to open the music app -->
+                <LinearLayout
+                    android:id="@+id/nowPlayingInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="@drawable/now_playing_info_bg"
+                    android:paddingStart="5dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp">
+
+                    <!-- Album Cover Art (or fallback music icon) -->
+                    <ImageView
+                        android:id="@+id/nowPlayingArt"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="9dp"
+                        android:scaleType="centerInside"
+                        android:background="@drawable/now_playing_art_bg"
+                        android:src="@drawable/ic_audio_output"
+                        android:contentDescription="@string/audio_output" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_vertical"
+                        android:duplicateParentState="true">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:duplicateParentState="true">
+
+                            <com.gathin.tvhome.EqualizerView
+                                android:id="@+id/nowPlayingEqualizer"
+                                android:layout_width="13dp"
+                                android:layout_height="11dp"
+                                android:layout_marginEnd="5dp"
+                                android:visibility="gone" />
+
+                            <TextView
+                                android:id="@+id/nowPlayingTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="74dp"
+                                android:maxWidth="104dp"
+                                android:singleLine="true"
+                                android:ellipsize="marquee"
+                                android:marqueeRepeatLimit="marquee_forever"
+                                android:scrollHorizontally="true"
+                                android:textColor="@drawable/pill_text"
+                                android:duplicateParentState="true"
+                                android:text="@string/not_playing"
+                                android:textSize="13sp"
+                                android:fontFamily="@string/font_medium"
+                                android:letterSpacing="0.01" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/nowPlayingArtist"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="74dp"
+                            android:maxWidth="104dp"
+                            android:layout_marginTop="1dp"
+                            android:singleLine="true"
+                            android:ellipsize="end"
+                            android:textColor="@drawable/pill_text_dim"
+                            android:duplicateParentState="true"
+                            android:text="@string/music_player"
+                            android:textSize="11sp"
+                            android:fontFamily="@string/font_regular" />
+
+                        <ProgressBar
+                            android:id="@+id/nowPlayingProgress"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="3dp"
+                            android:layout_marginTop="5dp"
+                            android:layout_marginBottom="1dp"
+                            android:max="1000"
+                            android:progress="0"
+                            android:duplicateParentState="true"
+                            android:progressDrawable="@drawable/now_playing_progress"
+                            android:visibility="gone" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="24dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="#2EFFFFFF" />
+
+                <!-- Previous Button -->
+                <ImageView
+                    android:id="@+id/btnNowPrev"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:padding="7dp"
+                    android:src="@drawable/ic_skip_previous"
+                    android:tint="@drawable/pill_text"
+                    android:background="@drawable/media_button_bg"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:contentDescription="@string/previous" />
+
+                <!-- Play/Pause Button -->
+                <ImageView
+                    android:id="@+id/btnNowPlayPause"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginStart="5dp"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_play"
+                    android:tint="@drawable/pill_text"
+                    android:background="@drawable/media_button_bg"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:contentDescription="@string/play_pause" />
+
+                <!-- Next Button -->
+                <ImageView
+                    android:id="@+id/btnNowNext"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="5dp"
+                    android:padding="7dp"
+                    android:src="@drawable/ic_skip_next"
+                    android:tint="@drawable/pill_text"
+                    android:background="@drawable/media_button_bg"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:contentDescription="@string/next" />
+
+            </LinearLayout>
+
+            <!-- iOS 26 style centered date, tall clock, and greeting stack -->
+            <LinearLayout
+                android:id="@+id/leftBlock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_alignParentTop="true"
+                android:gravity="center_horizontal"
+                android:clipChildren="false"
+                android:clipToPadding="false"
                 android:orientation="vertical">
 
-                <!-- The header texts use gravity left, not start: the launcher lays out left to right
-                     (no supportsRtl), and with start a right-to-left script such as Arabic would move to the
-                     right edge of these full-width lines instead of staying under the clock. -->
-                <TextView
-                    android:id="@+id/greeting"
-                    android:gravity="left"
-                    android:layout_width="match_parent"
+                <LinearLayout
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:ellipsize="end"
-                    android:layout_marginStart="4dp"
-                    android:textColor="#8CFFFFFF"
-                    android:textSize="12sp"
-                    android:fontFamily="@string/font_medium"
-                    android:letterSpacing="0.22"
-                    android:textAllCaps="true" />
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <!-- Shamsi date ("27 Mehr 1405"), shown when shamsi_date is on. -->
+                    <TextView
+                        android:id="@+id/shamsiDate"
+                        android:gravity="center"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:textColor="#E6FFFFFF"
+                        android:textSize="15sp"
+                        android:fontFamily="@string/font_medium"
+                        android:letterSpacing="0.02"
+                        android:shadowColor="#80000000"
+                        android:shadowDx="0"
+                        android:shadowDy="2"
+                        android:shadowRadius="8"
+                        android:includeFontPadding="false"
+                        android:visibility="gone" />
+
+                    <TextClock
+                        android:id="@+id/date"
+                        android:gravity="center"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:singleLine="@bool/date_single_line"
+                        android:maxLines="2"
+                        android:lineSpacingExtra="4dp"
+                        android:ellipsize="end"
+                        android:format12Hour="@string/date_format_home"
+                        android:format24Hour="@string/date_format_home"
+                        android:textColor="#EBFFFFFF"
+                        android:textSize="15sp"
+                        android:fontFamily="@string/font_medium"
+                        android:letterSpacing="0.02"
+                        android:shadowColor="#80000000"
+                        android:shadowDx="0"
+                        android:shadowDy="2"
+                        android:shadowRadius="8" />
+
+                    <!-- Lunar date ("Lunar 13/9 · Year of the Horse"), shown when lunar_date is on. -->
+                    <TextView
+                        android:id="@+id/lunarDate"
+                        android:gravity="center"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:textColor="#99FFFFFF"
+                        android:textSize="12sp"
+                        android:fontFamily="@string/font_regular"
+                        android:letterSpacing="0.10"
+                        android:textAllCaps="true"
+                        android:shadowColor="#80000000"
+                        android:shadowDx="0"
+                        android:shadowDy="1"
+                        android:shadowRadius="6"
+                        android:visibility="gone" />
+                </LinearLayout>
 
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginBottom="6dp"
+                    android:gravity="center_horizontal"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
                     android:orientation="horizontal"
                     android:baselineAligned="true">
 
@@ -285,9 +507,14 @@
                         android:format12Hour="h:mm"
                         android:format24Hour="HH:mm"
                         android:textColor="#FFFFFFFF"
-                        android:textSize="52sp"
-                        android:fontFamily="@string/font_light"
-                        android:letterSpacing="-0.04"
+                        android:textSize="82sp"
+                        android:scaleY="1.18"
+                        android:fontFamily="@string/font_regular"
+                        android:letterSpacing="-0.03"
+                        android:shadowColor="#80000000"
+                        android:shadowDx="0"
+                        android:shadowDy="3"
+                        android:shadowRadius="14"
                         android:includeFontPadding="false" />
 
                     <TextClock
@@ -296,99 +523,60 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
                         android:layout_gravity="bottom"
-                        android:layout_marginBottom="8dp"
+                        android:layout_marginBottom="7dp"
                         android:format12Hour="a"
                         android:format24Hour=""
-                        android:textColor="#B3FFFFFF"
-                        android:textSize="15sp"
+                        android:textColor="#CCFFFFFF"
+                        android:textSize="16sp"
                         android:fontFamily="@string/font_medium"
                         android:letterSpacing="0.08"
+                        android:shadowColor="#80000000"
+                        android:shadowDx="0"
+                        android:shadowDy="2"
+                        android:shadowRadius="8"
                         android:textAllCaps="true" />
 
                     <View
                         android:id="@+id/clockDivider"
                         android:layout_width="1dp"
                         android:layout_height="26dp"
-                        android:layout_gravity="bottom"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginEnd="16dp"
-                        android:layout_marginBottom="8dp"
+                        android:visibility="gone"
                         android:background="#33FFFFFF" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="bottom"
-                        android:layout_marginBottom="9dp"
-                        android:orientation="vertical">
-
-                        <!-- Shamsi date ("27 Mehr 1405"), shown when shamsi_date is on. -->
-                        <TextView
-                            android:id="@+id/shamsiDate"
-                            android:gravity="left"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:singleLine="true"
-                            android:ellipsize="end"
-                            android:textColor="#E6FFFFFF"
-                            android:textSize="17sp"
-                            android:fontFamily="@string/font_regular"
-                            android:letterSpacing="0.02"
-                            android:includeFontPadding="false"
-                            android:visibility="gone" />
-
-                        <TextClock
-                            android:id="@+id/date"
-                            android:gravity="left"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:singleLine="@bool/date_single_line"
-                            android:maxLines="2"
-                            android:lineSpacingExtra="6dp"
-                            android:ellipsize="end"
-                            android:format12Hour="@string/date_format_home"
-                            android:format24Hour="@string/date_format_home"
-                            android:textColor="#A6FFFFFF"
-                            android:textSize="14sp"
-                            android:fontFamily="@string/font_regular"
-                            android:letterSpacing="0.14"
-                            android:textAllCaps="true" />
-
-                        <!-- Lunar date ("Lunar 13/9 · Year of the Horse"), shown when lunar_date is on. -->
-                        <TextView
-                            android:id="@+id/lunarDate"
-                            android:gravity="left"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:singleLine="true"
-                            android:ellipsize="end"
-                            android:textColor="#80FFFFFF"
-                            android:textSize="14sp"
-                            android:fontFamily="@string/font_regular"
-                            android:letterSpacing="0.14"
-                            android:textAllCaps="true"
-                            android:visibility="gone" />
-                    </LinearLayout>
                 </LinearLayout>
+
+                <TextView
+                    android:id="@+id/greeting"
+                    android:gravity="center"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:textColor="#A6FFFFFF"
+                    android:textSize="11sp"
+                    android:fontFamily="@string/font_medium"
+                    android:letterSpacing="0.20"
+                    android:shadowColor="#80000000"
+                    android:shadowDx="0"
+                    android:shadowDy="1"
+                    android:shadowRadius="6"
+                    android:textAllCaps="true" />
 
             </LinearLayout>
 
-            <!-- Shown only when show_stats is on. Outside leftBlock, so the top buttons stay level with the clock
-                 row; gone, it takes no space. -->
+            <!-- Shown only when show_stats is on. Centered under the clock stack; gone, it takes no space. -->
             <TextView
                 android:id="@+id/stats"
                 android:layout_width="wrap_content"
                 android:layout_below="@id/leftBlock"
-                android:layout_alignStart="@id/leftBlock"
-                android:gravity="left"
+                android:layout_centerHorizontal="true"
+                android:gravity="center"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="4dp"
                 android:singleLine="true"
                 android:ellipsize="end"
                 android:textColor="#D9FFFFFF"
-                android:textSize="14sp"
+                android:textSize="13sp"
                 android:fontFamily="@string/font_medium"
                 android:letterSpacing="0.04"
                 android:focusable="false"
@@ -399,8 +587,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:layout_alignBottom="@id/leftBlock"
-                android:layout_marginBottom="6dp"
+                android:layout_alignParentTop="true"
+                android:layout_marginTop="10dp"
                 android:clipChildren="false"
                 android:clipToPadding="false"
                 android:orientation="horizontal">
@@ -415,7 +603,7 @@
                 <TextView
                     android:id="@+id/btnWifi"
                     style="@style/TopButton"
-                    android:maxWidth="180dp"
+                    android:maxWidth="160dp"
                     android:singleLine="true"
                     android:ellipsize="end"
                     android:text="@string/wifi"
@@ -490,171 +678,6 @@
                         android:text="K"
                         android:visibility="gone" />
                 </FrameLayout>
-            </LinearLayout>
-
-            <!-- Now Playing pill: displays album art, equalizer, song info, duration progress, and transport controls -->
-            <LinearLayout
-                android:id="@+id/nowPlayingPill"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_below="@+id/topButtons"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="@drawable/now_playing_bg"
-                android:paddingStart="8dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
-                android:clipChildren="false"
-                android:clipToPadding="false"
-                android:visibility="visible">
-
-                <!-- Track info area: focusable/clickable to open the music app -->
-                <LinearLayout
-                    android:id="@+id/nowPlayingInfo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:focusable="true"
-                    android:clickable="true"
-                    android:background="@drawable/now_playing_info_bg"
-                    android:paddingStart="6dp"
-                    android:paddingEnd="10dp"
-                    android:paddingTop="5dp"
-                    android:paddingBottom="5dp">
-
-                    <!-- Album Cover Art (or fallback music icon) -->
-                    <ImageView
-                        android:id="@+id/nowPlayingArt"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:layout_marginEnd="10dp"
-                        android:scaleType="centerInside"
-                        android:background="@drawable/now_playing_art_bg"
-                        android:src="@drawable/ic_audio_output"
-                        android:contentDescription="@string/audio_output" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center_vertical"
-                        android:duplicateParentState="true">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:duplicateParentState="true">
-
-                            <com.gathin.tvhome.EqualizerView
-                                android:id="@+id/nowPlayingEqualizer"
-                                android:layout_width="14dp"
-                                android:layout_height="12dp"
-                                android:layout_marginEnd="6dp"
-                                android:visibility="gone" />
-
-                            <TextView
-                                android:id="@+id/nowPlayingTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:minWidth="100dp"
-                                android:maxWidth="175dp"
-                                android:singleLine="true"
-                                android:ellipsize="marquee"
-                                android:marqueeRepeatLimit="marquee_forever"
-                                android:scrollHorizontally="true"
-                                android:textColor="@drawable/pill_text"
-                                android:duplicateParentState="true"
-                                android:text="@string/not_playing"
-                                android:textSize="13sp"
-                                android:fontFamily="@string/font_medium"
-                                android:letterSpacing="0.01" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/nowPlayingArtist"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minWidth="100dp"
-                            android:maxWidth="175dp"
-                            android:layout_marginTop="1dp"
-                            android:singleLine="true"
-                            android:ellipsize="end"
-                            android:textColor="@drawable/pill_text_dim"
-                            android:duplicateParentState="true"
-                            android:text="@string/music_player"
-                            android:textSize="11sp"
-                            android:fontFamily="@string/font_regular" />
-
-                        <ProgressBar
-                            android:id="@+id/nowPlayingProgress"
-                            style="?android:attr/progressBarStyleHorizontal"
-                            android:layout_width="match_parent"
-                            android:layout_height="3dp"
-                            android:layout_marginTop="5dp"
-                            android:layout_marginBottom="1dp"
-                            android:max="1000"
-                            android:progress="0"
-                            android:duplicateParentState="true"
-                            android:progressDrawable="@drawable/now_playing_progress"
-                            android:visibility="gone" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Divider -->
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="26dp"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="10dp"
-                    android:background="#2EFFFFFF" />
-
-                <!-- Previous Button -->
-                <ImageView
-                    android:id="@+id/btnNowPrev"
-                    android:layout_width="34dp"
-                    android:layout_height="34dp"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_skip_previous"
-                    android:tint="@drawable/pill_text"
-                    android:background="@drawable/media_button_bg"
-                    android:focusable="true"
-                    android:clickable="true"
-                    android:contentDescription="@string/previous" />
-
-                <!-- Play/Pause Button -->
-                <ImageView
-                    android:id="@+id/btnNowPlayPause"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginStart="6dp"
-                    android:padding="9dp"
-                    android:src="@drawable/ic_play"
-                    android:tint="@drawable/pill_text"
-                    android:background="@drawable/media_button_bg"
-                    android:focusable="true"
-                    android:clickable="true"
-                    android:contentDescription="@string/play_pause" />
-
-                <!-- Next Button -->
-                <ImageView
-                    android:id="@+id/btnNowNext"
-                    android:layout_width="34dp"
-                    android:layout_height="34dp"
-                    android:layout_marginStart="6dp"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_skip_next"
-                    android:tint="@drawable/pill_text"
-                    android:background="@drawable/media_button_bg"
-                    android:focusable="true"
-                    android:clickable="true"
-                    android:contentDescription="@string/next" />
-
             </LinearLayout>
         </RelativeLayout>
 

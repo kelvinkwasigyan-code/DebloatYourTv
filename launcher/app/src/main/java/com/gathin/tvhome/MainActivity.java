@@ -562,22 +562,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             ((TextView) findViewById(R.id.date)).setTextColor(Color.WHITE);
             findViewById(R.id.clockDivider).setBackgroundColor(Color.WHITE);
         }
-        if (getResources().getBoolean(R.bool.rtl_menu_bar)) {
-            // Center Hebrew greetings over the numeric time, independent of a visible AM/PM label. The clock's row
-            // is watched too: date_below_clock can move the whole row right under a wider date.
-            View clock = findViewById(R.id.clock);
-            View clockRow = (View) clock.getParent();
-            View.OnLayoutChangeListener centerGreeting = (v, l, t, right, bottom, ol, ot, or, ob) -> {
-                ViewGroup.LayoutParams params = greeting.getLayoutParams();
-                if (params.width != clock.getWidth()) {
-                    params.width = clock.getWidth();
-                    greeting.setLayoutParams(params);
-                }
-                greeting.setTranslationX(clockRow.getLeft() + clock.getLeft());
-            };
-            clock.addOnLayoutChangeListener(centerGreeting);
-            clockRow.addOnLayoutChangeListener(centerGreeting);
-        }
         btnWifi = findViewById(R.id.btnWifi);
         shamsiDate = findViewById(R.id.shamsiDate);
         stats = findViewById(R.id.stats);
@@ -902,12 +886,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
             if (keyCode == KeyEvent.KEYCODE_DPAD_UP) return true;
             if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-                if (nowPlayingPill != null && nowPlayingPill.getVisibility() == View.VISIBLE) {
-                    if (v == btnSettings || (btnProfile != null && v == btnProfile)) {
-                        btnNowPlayPause.requestFocus();
-                        return true;
-                    }
-                }
                 // Back to the dock tile Up came from, not wherever the focus finder lands.
                 focusTile(singleRow ? lastFocused : lastFocused % COLUMNS);
                 return true;
@@ -917,7 +895,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             int rightmost = hasProfile ? R.id.btnProfile : R.id.btnSettings;
             int leftButton = rtlMenuBar ? rightmost : firstButton;
             int rightButton = rtlMenuBar ? firstButton : rightmost;
-            if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) return v.getId() == leftButton;
+            if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+                if (v.getId() == leftButton) {
+                    if (nowPlayingPill != null && nowPlayingPill.getVisibility() == View.VISIBLE && btnNowNext != null) {
+                        btnNowNext.requestFocus();
+                    }
+                    return true;
+                }
+                return false;
+            }
             return keyCode == KeyEvent.KEYCODE_DPAD_RIGHT && v.getId() == rightButton;
         };
         btnInputs.setOnKeyListener(pillKeys);
@@ -972,18 +958,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             View.OnKeyListener nowPlayingKey = (v, keyCode, event) -> {
                 if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
                 if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-                    if (btnSettings != null && btnSettings.getVisibility() == View.VISIBLE) {
-                        btnSettings.requestFocus();
-                    } else if (btnProfile != null && btnProfile.getVisibility() == View.VISIBLE) {
-                        btnProfile.requestFocus();
-                    } else {
-                        firstTopButton().requestFocus();
-                    }
                     return true;
                 }
                 if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-                    int rightDockTile = Math.min(COLUMNS - 1, adapter.dockFilled() > 0 ? adapter.dockFilled() - 1 : 0);
-                    focusTile(singleRow ? lastFocused : (lastFocused >= 0 ? lastFocused % COLUMNS : rightDockTile));
+                    focusTile(singleRow ? lastFocused : (lastFocused >= 0 ? lastFocused % COLUMNS : 0));
                     return true;
                 }
                 if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
@@ -996,7 +974,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     if (v == nowPlayingInfo) { btnNowPrev.requestFocus(); return true; }
                     if (v == btnNowPrev) { btnNowPlayPause.requestFocus(); return true; }
                     if (v == btnNowPlayPause) { btnNowNext.requestFocus(); return true; }
-                    if (v == btnNowNext) return true;
+                    if (v == btnNowNext) {
+                        View target = btnInputs != null && btnInputs.getVisibility() == View.VISIBLE
+                                ? btnInputs : firstTopButton();
+                        if (target != null) target.requestFocus();
+                        return true;
+                    }
                 }
                 return false;
             };
@@ -2688,11 +2671,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             // One row: Up leaves for the top bar or Now Playing, Down has nowhere to go, and Left/Right walk the whole row,
             // stopping at its two ends (the default focus search scrolls the row to the next tile).
             if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-                if (nowPlayingPill != null && nowPlayingPill.getVisibility() == View.VISIBLE) {
-                    if (position >= 2) {
-                        btnNowPlayPause.requestFocus();
-                        return true;
-                    }
+                if (nowPlayingPill != null && nowPlayingPill.getVisibility() == View.VISIBLE
+                        && position < Math.max(1, COLUMNS / 2)) {
+                    btnNowPlayPause.requestFocus();
+                    return true;
                 }
                 firstTopButton().requestFocus();
                 return true;
@@ -2721,11 +2703,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
             if (position < COLUMNS) {
-                if (nowPlayingPill != null && nowPlayingPill.getVisibility() == View.VISIBLE) {
-                    if (position >= COLUMNS - 2 || position == adapter.dockFilled() - 1) {
-                        btnNowPlayPause.requestFocus();
-                        return true;
-                    }
+                if (nowPlayingPill != null && nowPlayingPill.getVisibility() == View.VISIBLE
+                        && position < Math.max(1, COLUMNS / 2)) {
+                    btnNowPlayPause.requestFocus();
+                    return true;
                 }
                 firstTopButton().requestFocus();
                 return true;          // dock row: move focus to the top bar
@@ -2753,8 +2734,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     /**
-     * date_below_clock: the date column moves to its own line under the clock, in the vertical LinearLayout that holds
-     * the clock's row, and the line between them goes. In Hebrew (rtl_menu_bar) the date and the clock's row sit right.
+     * date_below_clock: moves the date group directly below the centered clock row instead of above it.
      */
     private void moveDateBelowClock() {
         View column = (View) findViewById(R.id.date).getParent();
@@ -2762,15 +2742,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         LinearLayout clockColumn = (LinearLayout) clockRow.getParent();
         ((ViewGroup) column.getParent()).removeView(column);
         findViewById(R.id.clockDivider).setVisibility(View.GONE);
-        // Its own width, not the column's: in Hebrew the column is only as wide as the clock.
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.topMargin = Math.round(4 * density);
-        if (getResources().getBoolean(R.bool.rtl_menu_bar)) {
-            // Date and clock flush right; the greeting stays left and follows the clock by translation.
-            lp.gravity = Gravity.RIGHT;
-            ((LinearLayout.LayoutParams) clockRow.getLayoutParams()).gravity = Gravity.RIGHT;
-        }
+        lp.gravity = Gravity.CENTER_HORIZONTAL;
         clockColumn.addView(column, clockColumn.indexOfChild(clockRow) + 1, lp);
     }
 
