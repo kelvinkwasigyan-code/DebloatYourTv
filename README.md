@@ -585,7 +585,7 @@ The **TV** needs Android 8.0 (API 26) or newer: `minSdk` is a compile-time floor
 |---|---|
 | **Configure** | Dock order, hidden apps, Live TV app, 4 to 7 tiles per row, reduced motion. All in [`config.xml`](launcher/app/src/main/res/values/config.xml) |
 | **Settings on the TV** | Hold OK on Settings for launcher settings. Optional `launcher_settings_button` makes a normal click open them directly; TV settings remain on the settings page and their app tile. |
-| **Themes** | Background, wallpaper and layout from a `config.json` pushed over Wi-Fi, no rebuild. ten ship in [`themes/`](themes/), the built-in `default/` included |
+| **Themes** | Background, wallpaper and layout from a `config.json` pushed over Wi-Fi, no rebuild. 16 ship in [`themes/`](themes/), the built-in `default/` included |
 | **28 languages** | Follows the TV's language, with a fully mirrored right-to-left layout for Hebrew |
 | **App library** | Optional: browse every installed app and add or remove Home shortcuts. See [the app library guide](docs/app-library.md) |
 | **Tile menu** | Optional (`tile_menu`): hold OK on a tile for Move, Remove from Home and App info. Off, holding OK opens App info |
@@ -626,13 +626,14 @@ and a wallpaper.
   - **Reorder apps**, only with `launcher_settings_button`: OK picks an app up, the arrows move it, Back
     places it, and Back again finishes.
   - **Apps per row** 4, 5, 6 or 7; **Rows below dock** 0 to 3, how many rows of tiles stay visible under the
-    dock band; **Dock band opacity** 100%, 70%, 50% or 30%. The last two only do anything while the dock is
-    its own row (`dock_row`, on by default).
+    dock band; **Dock band opacity** 100%, 70%, 50% or 30%; and **Dock frosted glass** on or off. The last three
+    only do anything while the dock is its own row (`dock_row`, on by default).
   - **Wallpaper**: one picture from the theme's collection (or its `wallpaper.jpg`), **None**, or **Theme
-    default**. A pick holds that picture and stops the rotation until you choose Theme default, press
-    Follow theme, or push the theme again.
-  - **Animations** on or off, and **Advanced effects** (tile lift, icon zoom and smooth ambient-colour
-    transitions; they may use more memory) once animations are on.
+    default**, plus **Dynamic wallpaper** rotation interval. A pick holds that picture and stops the rotation until
+    you choose Theme default, press Follow theme, or push the theme again.
+  - **App and ambient glow** on or off, **Wi-Fi pill** expanded or icon-only, **Animations** on or off, and
+    **Advanced effects** (tile lift, icon zoom and smooth ambient-colour transitions; they may use more memory)
+    once animations are on.
   - **Open on start**, only with `open_on_start_choice`: Off, or an app that opens instead of Home the first
     time Home comes up after the TV starts. Once per boot, so Home and Back still reach the launcher.
   - **Follow theme (reset on-TV choices)**, which clears every choice above. Pushing or resetting a theme

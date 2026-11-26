@@ -31,8 +31,8 @@
    ```
 3. Run:
    ```powershell
-   $env:JAVA_HOME = "C:\Users\isaac\.gemini\antigravity-ide\scratch\jdk17\jdk-17.0.20.1+1"
-   .\launcher\build-and-install.ps1 -TvHost 192.168.0.51
+   $env:JAVA_HOME = "<path to JDK 17>"
+   .\launcher\build-and-install.ps1 -TvHost 192.168.1.50
    ```
 
 ---
@@ -40,7 +40,7 @@
 ## How to Apply Wallpapers and Themes
 You can change the theme or add wallpapers without recompiling:
 ```powershell
-tools\theme.ps1 -TvHost 192.168.0.51 themes\aurora
+tools\theme.ps1 -TvHost 192.168.1.50 themes\aurora
 ```
 Themes available in `themes\`:
 - `themes\aurora`
@@ -50,7 +50,7 @@ Themes available in `themes\`:
 
 To restore back to default pitch-black:
 ```powershell
-tools\theme.ps1 -TvHost 192.168.0.51 -Reset
+tools\theme.ps1 -TvHost 192.168.1.50 -Reset
 ```
 
 ---
@@ -66,7 +66,7 @@ tools\venv\Scripts\python.exe tools\tv.py "pm enable --user 0 com.netflix.ninja"
 ## How to Fully Undo (One-Line Restore)
 Run the included restore script:
 ```powershell
-.\restore-my-tv.ps1 -TvHost 192.168.0.51
+.\restore-my-tv.ps1 -TvHost 192.168.1.50
 ```
 This re-enables all apps, sets stock Google TV launcher back as Home, and restores standard DNS.
 
@@ -77,4 +77,4 @@ Now that your TV is clean and configured:
 1. On your TV, go to: **Settings → System → Developer options**.
 2. Turn **USB debugging** OFF.
 3. Select **Revoke USB debugging authorizations**.
-4. (Optional) Run `tools\venv\Scripts\python.exe tools\adb-closed.py 192.168.0.51` to verify port 5555 is closed to the local network.
+4. (Optional) Run `tools\venv\Scripts\python.exe tools\adb-closed.py 192.168.1.50` to verify port 5555 is closed to the local network.

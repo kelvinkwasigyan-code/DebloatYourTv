@@ -254,169 +254,12 @@
             android:clipToPadding="false">
 
             <LinearLayout
-                android:id="@+id/leftBlock"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_toEndOf="@+id/topButtons"
-                android:layout_marginStart="16dp"
-                android:orientation="horizontal"
-                android:gravity="right|bottom">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom"
-                    android:layout_marginBottom="9dp"
-                    android:orientation="vertical">
-
-                    <!-- Shamsi date ("27 Mehr 1405"), shown when shamsi_date is on. -->
-                    <TextView
-                        android:id="@+id/shamsiDate"
-                        android:gravity="right"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:singleLine="true"
-                        android:ellipsize="end"
-                        android:textColor="#E6FFFFFF"
-                        android:textSize="17sp"
-                        android:fontFamily="@string/font_regular"
-                        android:letterSpacing="0.02"
-                        android:includeFontPadding="false"
-                        android:visibility="gone" />
-
-                    <TextClock
-                        android:id="@+id/date"
-                        android:gravity="right"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:singleLine="true"
-                        android:ellipsize="end"
-                        android:format12Hour="@string/date_format"
-                        android:format24Hour="@string/date_format"
-                        android:textColor="#A6FFFFFF"
-                        android:textSize="14sp"
-                        android:fontFamily="@string/font_regular"
-                        android:letterSpacing="0.14"
-                        android:textAllCaps="true" />
-
-                        <!-- Lunar date ("Lunar 13/9 · Year of the Horse"), shown when lunar_date is on. -->
-                        <TextView
-                            android:id="@+id/lunarDate"
-                            android:gravity="right"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:singleLine="true"
-                            android:ellipsize="end"
-                            android:textColor="#80FFFFFF"
-                            android:textSize="14sp"
-                            android:fontFamily="@string/font_regular"
-                            android:letterSpacing="0.14"
-                            android:textAllCaps="true"
-                            android:visibility="gone" />
-                </LinearLayout>
-
-                <View
-                    android:id="@+id/clockDivider"
-                    android:layout_width="1dp"
-                    android:layout_height="26dp"
-                    android:layout_gravity="bottom"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginEnd="16dp"
-                    android:layout_marginBottom="8dp"
-                    android:background="#33FFFFFF" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <TextView
-                        android:id="@+id/greeting"
-                        android:gravity="center_horizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:maxLines="1"
-                        android:autoSizeTextType="uniform"
-                        android:autoSizeMinTextSize="9sp"
-                        android:autoSizeMaxTextSize="12sp"
-                        android:autoSizeStepGranularity="1sp"
-                        android:ellipsize="end"
-                        android:textColor="#8CFFFFFF"
-                        android:textSize="12sp"
-                        android:fontFamily="@string/font_medium"
-                        android:letterSpacing="0"
-                        android:textAllCaps="true" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:baselineAligned="true">
-                        <TextClock
-                            android:id="@+id/ampm"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="6dp"
-                            android:singleLine="true"
-                            android:textDirection="rtl"
-                            android:layout_gravity="bottom"
-                            android:layout_marginBottom="8dp"
-                            android:format12Hour="a"
-                            android:format24Hour=""
-                            android:textColor="#B3FFFFFF"
-                            android:textSize="15sp"
-                            android:fontFamily="@string/font_medium"
-                            android:letterSpacing="0"
-                            android:ellipsize="none"
-                            android:textAllCaps="true" />
-
-                        <TextClock
-                            android:id="@+id/clock"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="6dp"
-                            android:format12Hour="h:mm"
-                            android:format24Hour="HH:mm"
-                            android:textColor="#FFFFFFFF"
-                            android:textSize="52sp"
-                            android:fontFamily="@string/font_light"
-                            android:letterSpacing="-0.04"
-                            android:includeFontPadding="false" />
-                    </LinearLayout>
-
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Shown only when show_stats is on. Outside leftBlock, so the top buttons stay level with the clock
-                 row; gone, it takes no space. -->
-            <TextView
-                android:id="@+id/stats"
-                android:layout_width="wrap_content"
-                android:layout_below="@id/leftBlock"
-                android:layout_alignStart="@id/leftBlock"
-                android:layout_alignEnd="@id/leftBlock"
-                android:gravity="right"
-                android:textDirection="rtl"
-                android:layout_marginEnd="6dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:singleLine="true"
-                android:ellipsize="end"
-                android:textColor="#D9FFFFFF"
-                android:textSize="14sp"
-                android:fontFamily="@string/font_medium"
-                android:letterSpacing="0.04"
-                android:focusable="false"
-                android:visibility="gone" />
-
-            <LinearLayout
                 android:id="@+id/topButtons"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
-                android:layout_alignBottom="@id/leftBlock"
-                android:layout_marginBottom="6dp"
+                android:layout_alignParentTop="true"
+                android:layout_marginTop="10dp"
                 android:clipChildren="false"
                 android:clipToPadding="false"
                 android:orientation="horizontal">
@@ -465,7 +308,7 @@
                     style="@style/TopButtonIcon"
                     android:visibility="gone"
                     android:contentDescription="@string/app_library"
-                    android:drawableStart="@drawable/ic_apps"
+                    android:drawableStart="@drawable/ic_apps_pill"
                     android:nextFocusDown="@+id/grid" />
 
                 <TextView
@@ -484,9 +327,16 @@
                     android:nextFocusDown="@+id/grid" />
 
                 <TextView
+                    android:id="@+id/btnBluetooth"
+                    style="@style/TopButton"
+                    android:text="@string/bluetooth"
+                    android:drawableStart="@drawable/ic_bluetooth"
+                    android:nextFocusDown="@+id/grid" />
+
+                <TextView
                     android:id="@+id/btnWifi"
                     style="@style/TopButton"
-                    android:maxWidth="180dp"
+                    android:maxWidth="160dp"
                     android:singleLine="true"
                     android:ellipsize="end"
                     android:text="@string/wifi"
@@ -501,23 +351,192 @@
                     android:nextFocusDown="@+id/grid" />
             </LinearLayout>
 
+            <!-- iOS 26 style centered date, tall clock, and greeting stack -->
+            <LinearLayout
+                android:id="@+id/leftBlock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_alignParentTop="true"
+                android:gravity="center_horizontal"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/shamsiDate"
+                        android:gravity="center"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:textColor="#E6FFFFFF"
+                        android:textSize="15sp"
+                        android:fontFamily="@string/font_medium"
+                        android:letterSpacing="0.02"
+                        android:shadowColor="#80000000"
+                        android:shadowDx="0"
+                        android:shadowDy="2"
+                        android:shadowRadius="8"
+                        android:includeFontPadding="false"
+                        android:visibility="gone" />
+
+                    <TextClock
+                        android:id="@+id/date"
+                        android:gravity="center"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:format12Hour="@string/date_format"
+                        android:format24Hour="@string/date_format"
+                        android:textColor="#EBFFFFFF"
+                        android:textSize="15sp"
+                        android:fontFamily="@string/font_medium"
+                        android:letterSpacing="0.02"
+                        android:shadowColor="#80000000"
+                        android:shadowDx="0"
+                        android:shadowDy="2"
+                        android:shadowRadius="8" />
+
+                    <TextView
+                        android:id="@+id/lunarDate"
+                        android:gravity="center"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:textColor="#99FFFFFF"
+                        android:textSize="12sp"
+                        android:fontFamily="@string/font_regular"
+                        android:letterSpacing="0.10"
+                        android:textAllCaps="true"
+                        android:shadowColor="#80000000"
+                        android:shadowDx="0"
+                        android:shadowDy="1"
+                        android:shadowRadius="6"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginBottom="6dp"
+                    android:gravity="center_horizontal"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal"
+                    android:baselineAligned="true">
+
+                    <TextClock
+                        android:id="@+id/ampm"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:singleLine="true"
+                        android:textDirection="rtl"
+                        android:layout_gravity="bottom"
+                        android:layout_marginBottom="7dp"
+                        android:format12Hour="a"
+                        android:format24Hour=""
+                        android:textColor="#CCFFFFFF"
+                        android:textSize="16sp"
+                        android:fontFamily="@string/font_medium"
+                        android:letterSpacing="0"
+                        android:shadowColor="#80000000"
+                        android:shadowDx="0"
+                        android:shadowDy="2"
+                        android:shadowRadius="8"
+                        android:ellipsize="none"
+                        android:textAllCaps="true" />
+
+                    <TextClock
+                        android:id="@+id/clock"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:format12Hour="h:mm"
+                        android:format24Hour="HH:mm"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="82sp"
+                        android:scaleY="1.18"
+                        android:fontFamily="@string/font_regular"
+                        android:letterSpacing="-0.03"
+                        android:shadowColor="#80000000"
+                        android:shadowDx="0"
+                        android:shadowDy="3"
+                        android:shadowRadius="14"
+                        android:includeFontPadding="false" />
+
+                    <View
+                        android:id="@+id/clockDivider"
+                        android:layout_width="1dp"
+                        android:layout_height="26dp"
+                        android:visibility="gone"
+                        android:background="#33FFFFFF" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/greeting"
+                    android:gravity="center"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:textColor="#A6FFFFFF"
+                    android:textSize="11sp"
+                    android:fontFamily="@string/font_medium"
+                    android:letterSpacing="0"
+                    android:shadowColor="#80000000"
+                    android:shadowDx="0"
+                    android:shadowDy="1"
+                    android:shadowRadius="6"
+                    android:textAllCaps="true" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/stats"
+                android:layout_width="wrap_content"
+                android:layout_below="@id/leftBlock"
+                android:layout_centerHorizontal="true"
+                android:gravity="center"
+                android:textDirection="rtl"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:textColor="#D9FFFFFF"
+                android:textSize="13sp"
+                android:fontFamily="@string/font_medium"
+                android:letterSpacing="0.04"
+                android:focusable="false"
+                android:visibility="gone" />
+
             <LinearLayout
                 android:id="@+id/nowPlayingPill"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_below="@+id/topButtons"
-                android:layout_marginTop="10dp"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentTop="true"
+                android:layout_marginTop="6dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:background="@drawable/now_playing_bg"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="5dp"
-                android:paddingBottom="5dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
                 android:clipChildren="false"
                 android:clipToPadding="false"
-                android:visibility="gone">
+                android:visibility="visible">
 
                 <LinearLayout
                     android:id="@+id/nowPlayingInfo"
@@ -528,16 +547,20 @@
                     android:focusable="true"
                     android:clickable="true"
                     android:background="@drawable/now_playing_info_bg"
-                    android:paddingStart="6dp"
-                    android:paddingEnd="10dp"
+                    android:paddingStart="5dp"
+                    android:paddingEnd="8dp"
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp">
 
-                    <com.gathin.tvhome.EqualizerView
-                        android:id="@+id/nowPlayingEqualizer"
-                        android:layout_width="16dp"
-                        android:layout_height="14dp"
-                        android:layout_marginEnd="9dp" />
+                    <ImageView
+                        android:id="@+id/nowPlayingArt"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="9dp"
+                        android:scaleType="centerInside"
+                        android:background="@drawable/now_playing_art_bg"
+                        android:src="@drawable/ic_audio_output"
+                        android:contentDescription="@string/audio_output" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -546,38 +569,71 @@
                         android:gravity="center_vertical"
                         android:duplicateParentState="true">
 
-                        <TextView
-                            android:id="@+id/nowPlayingTitle"
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:maxWidth="170dp"
-                            android:singleLine="true"
-                            android:ellipsize="marquee"
-                            android:marqueeRepeatLimit="marquee_forever"
-                            android:scrollHorizontally="true"
-                            android:textColor="@drawable/pill_text"
-                            android:duplicateParentState="true"
-                            android:textSize="13sp"
-                            android:fontFamily="@string/font_medium"
-                            android:letterSpacing="0.01" />
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:duplicateParentState="true">
+
+                            <com.gathin.tvhome.EqualizerView
+                                android:id="@+id/nowPlayingEqualizer"
+                                android:layout_width="13dp"
+                                android:layout_height="11dp"
+                                android:layout_marginEnd="5dp"
+                                android:visibility="gone" />
+
+                            <TextView
+                                android:id="@+id/nowPlayingTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="74dp"
+                                android:maxWidth="104dp"
+                                android:singleLine="true"
+                                android:ellipsize="marquee"
+                                android:marqueeRepeatLimit="marquee_forever"
+                                android:scrollHorizontally="true"
+                                android:textColor="@drawable/pill_text"
+                                android:duplicateParentState="true"
+                                android:text="@string/not_playing"
+                                android:textSize="13sp"
+                                android:fontFamily="@string/font_medium"
+                                android:letterSpacing="0.01" />
+                        </LinearLayout>
 
                         <TextView
                             android:id="@+id/nowPlayingArtist"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:maxWidth="170dp"
+                            android:minWidth="74dp"
+                            android:maxWidth="104dp"
+                            android:layout_marginTop="1dp"
                             android:singleLine="true"
                             android:ellipsize="end"
                             android:textColor="@drawable/pill_text_dim"
                             android:duplicateParentState="true"
+                            android:text="@string/music_player"
                             android:textSize="11sp"
                             android:fontFamily="@string/font_regular" />
+
+                        <ProgressBar
+                            android:id="@+id/nowPlayingProgress"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="3dp"
+                            android:layout_marginTop="5dp"
+                            android:layout_marginBottom="1dp"
+                            android:max="1000"
+                            android:progress="0"
+                            android:duplicateParentState="true"
+                            android:progressDrawable="@drawable/now_playing_progress"
+                            android:visibility="gone" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <View
                     android:layout_width="1dp"
-                    android:layout_height="22dp"
+                    android:layout_height="24dp"
                     android:layout_marginStart="6dp"
                     android:layout_marginEnd="8dp"
                     android:background="#2EFFFFFF" />
@@ -598,7 +654,7 @@
                     android:id="@+id/btnNowPlayPause"
                     android:layout_width="36dp"
                     android:layout_height="36dp"
-                    android:layout_marginStart="6dp"
+                    android:layout_marginStart="5dp"
                     android:padding="8dp"
                     android:src="@drawable/ic_play"
                     android:tint="@drawable/pill_text"
@@ -611,7 +667,7 @@
                     android:id="@+id/btnNowNext"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:layout_marginStart="6dp"
+                    android:layout_marginStart="5dp"
                     android:padding="7dp"
                     android:src="@drawable/ic_skip_next"
                     android:tint="@drawable/pill_text"

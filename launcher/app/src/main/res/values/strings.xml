@@ -64,7 +64,7 @@
     <string name="rotation_30m">Every 30 minutes</string>
     <string name="rotation_60m">Every 1 hour</string>
     <string name="dock_glass_state">Dock frosted glass: %1$s</string>
-    <string name="glow_effects_state">App &amp; ambient glow: %1$s</string>
+    <string name="glow_effects_state">App and ambient glow: %1$s</string>
     <string name="wifi_label_state">Wi-Fi pill: %1$s</string>
     <string name="wifi_label_name">Expanded (Show network name)</string>
     <string name="wifi_label_icon">Compact (Icon only)</string>
